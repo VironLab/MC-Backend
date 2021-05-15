@@ -35,41 +35,50 @@
  *<p>
  */
 
-package eu.vironlab.mc.util
+package eu.vironlab.mc.feature.punishment
 
-import eu.vironlab.mc.feature.FeatureRegistry
-import eu.vironlab.mc.language.LanguageProvider
-import eu.vironlab.vextension.database.DatabaseClient
-import java.nio.file.Path
+import com.google.gson.reflect.TypeToken
+import java.lang.reflect.Type
+import java.util.concurrent.TimeUnit
 
-object CloudUtil {
-    fun init(
-        db: DatabaseClient,
-        prefix: String,
-        dataFolder: Path,
-        languageProvider: LanguageProvider,
-        registry: FeatureRegistry
-    ) {
-        this.dbClient = db
-        this.prefix = prefix
-        this.dataFolder = dataFolder
-        this.languageProvider = languageProvider
-        this.featureRegistry = registry
-    }
 
-    @JvmStatic
-    lateinit var dbClient: DatabaseClient
-
-    @JvmStatic
-    lateinit var prefix: String
-
-    @JvmStatic
-    lateinit var languageProvider: LanguageProvider
-
-    @JvmStatic
-    lateinit var dataFolder: Path
-
-    @JvmStatic
-    lateinit var featureRegistry: FeatureRegistry
-
+enum class PunishType {
+    WARN, BAN, MUTE, PERMA_BAN, PERMA_MUTE
 }
+
+data class Punishment(
+    val name: String,
+    val active: Boolean,
+    val punishId: String,
+    val type: PunishType,
+    val times: Int,
+    val team: String,
+    val unPunishedReason: String,
+    val unit: TimeUnit,
+    val discharge: Long,
+    val punishedAt: Long,
+    val unPunishedAt: Long,
+    val unPunishedBy: String
+) {
+    companion object {
+
+        @JvmStatic
+        val TYPE: Type = object : TypeToken<Punishment>() {}.type
+
+    }
+}
+
+data class PunishmentReason(
+    val id: Int,
+    val name: String,
+    val permission: String,
+    val lengths: MutableList<PunishmentReasonTime>
+)
+
+data class PunishmentReasonTime(
+    val times: Int,
+    val length: Long,
+    val type: PunishType,
+    val unit: TimeUnit
+)
+

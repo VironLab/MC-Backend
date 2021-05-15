@@ -37,15 +37,15 @@
 
 package eu.vironlab.mc
 
-import com.google.gson.GsonBuilder
 import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.external.ICloudModule
-import eu.vironlab.mc.economy.DefaultEconomyProvider
+import eu.vironlab.mc.feature.economy.DefaultEconomyFeature
 import eu.vironlab.mc.extension.connectionData
+import eu.vironlab.mc.feature.broadcast.DefaultBroadcastFeature
+import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
 import eu.vironlab.mc.language.DefaultLanguage
 import eu.vironlab.mc.language.DefaultLanguageProvider
 import eu.vironlab.mc.util.CloudUtil
-import eu.vironlab.mc.feature.TimedBroadcast
 import eu.vironlab.vextension.collection.DataPair
 import eu.vironlab.vextension.database.DatabaseClient
 import eu.vironlab.vextension.database.factory.createDatabaseClient
@@ -55,9 +55,7 @@ import eu.vironlab.vextension.document.DocumentFactory
 import eu.vironlab.vextension.document.document
 import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import java.io.File
-import java.net.URI
 import java.nio.file.Files
-import java.nio.file.Path
 
 class Backend : ICloudModule {
 
@@ -76,7 +74,8 @@ class Backend : ICloudModule {
                 if (!it.exists()) {
                     Files.createDirectories(it.toPath())
                 }
-                CloudAPI.instance.getGlobalPropertyHolder().setProperty<String>("vextensionLibDir", it.toURI().toString())
+                CloudAPI.instance.getGlobalPropertyHolder()
+                    .setProperty<String>("vextensionLibDir", it.toURI().toString())
                 it
             })
             this.dataFolder = File(
@@ -91,7 +90,7 @@ class Backend : ICloudModule {
             val db = initDatabase()
             CloudUtil.init(
                 db.first,
-                DefaultEconomyProvider("coins"),
+                DefaultEconomyFeature("coins"),
                 DefaultLanguageProvider().let {
                     it.registerLanguage(DefaultLanguage("english", db.first, config.getString("prefix")!!))
                     it.registerLanguage(DefaultLanguage("german", db.first, config.getString("prefix")!!))
@@ -111,20 +110,29 @@ class Backend : ICloudModule {
                 it.setProperty<ConfigDocument>("dbConnection", db.second)
             }
             startFeatures(config.getDocument("features")!!)
-        }catch (e:Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     fun startFeatures(cfg: Document) {
-        File(dataFolder, "features").let {
+        val featureDir = File(dataFolder, "features").let {
             if (!it.exists()) {
                 Files.createDirectories(it.toPath())
             }
             it
         }
-        if (cfg.getBoolean("autobroadcast")!!) {
-            TimedBroadcast(File(dataFolder, "features/autobroadcast.json"))
+        cfg.getKeys().forEach {
+            val cfgDir = File(featureDir, it)
+            if (!cfgDir.exists()) {
+                Files.createDirectories(cfgDir.toPath())
+            }
+        }
+        if (cfg.getBoolean("broadcast")!!) {
+            DefaultBroadcastFeature(File(dataFolder, "feature/broadcast/autobroadcast.json"))
+        }
+        if (cfg.getBoolean("punishment")!!) {
+            DefaultPunishmentFeature(CloudUtil, File(featureDir, "punishment/"))
         }
     }
 
@@ -134,7 +142,8 @@ class Backend : ICloudModule {
 
         //Features
         val features = document()
-        features.getBoolean("autobroadcast", true)
+        features.getBoolean("broadcast", true)
+        features.getBoolean("punishment", true)
 
         config.let {
             it.getString("prefix", "§2§lViron§a§lLab §8| §7")

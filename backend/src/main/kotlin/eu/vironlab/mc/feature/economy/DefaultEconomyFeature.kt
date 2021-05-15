@@ -35,15 +35,35 @@
  *<p>
  */
 
-package eu.vironlab.mc.punishment
+package eu.vironlab.mc.feature.economy
 
 import eu.thesimplecloud.api.player.IOfflineCloudPlayer
 
-interface PunishmentProvider {
 
-    fun getReasons(id: Int): Reason?
+class DefaultEconomyFeature(val propertyName: String) : EconomyFeature {
+    override fun getCoins(player: IOfflineCloudPlayer): Long {
+        return player.getProperty<Long>(propertyName)?.getValue() ?: player.let {
+            it.setProperty<Long>(
+                propertyName,
+                1000L
+            ).getValue(); it.update(); 1000L
+        }
+    }
 
-    fun getPunishments(player: IOfflineCloudPlayer): Collection<Punishment>
+    override fun addCoins(coins: Long, player: IOfflineCloudPlayer) {
+        setCoins(getCoins(player) + coins, player)
+    }
 
-    fun addPunishment(id: Int, executor: String, proof: Proof, player: IOfflineCloudPlayer): String
+    override fun removeCoins(coins: Long, player: IOfflineCloudPlayer) {
+        setCoins(getCoins(player) - coins, player)
+    }
+
+    override fun setCoins(coins: Long, player: IOfflineCloudPlayer) {
+        if (player.hasProperty(propertyName)) {
+            player.removeProperty(propertyName)
+        }
+        player.setProperty(propertyName, coins)
+        player.update()
+    }
+
 }

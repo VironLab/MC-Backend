@@ -39,7 +39,7 @@ package eu.vironlab.mc.extension
 
 import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.VextensionDownloader
-import eu.vironlab.mc.economy.DefaultEconomyProvider
+import eu.vironlab.mc.feature.economy.DefaultEconomyFeature
 import eu.vironlab.mc.language.DefaultLanguage
 import eu.vironlab.mc.language.DefaultLanguageProvider
 import eu.vironlab.mc.util.CloudUtil
@@ -86,7 +86,7 @@ fun CloudUtil.initOnService() {
             }
             langProvider
         }
-        this.economyProvider = DefaultEconomyProvider(
+        this.economyProvider = DefaultEconomyFeature(
             CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("coinsPropertyName").getBlocking()
                 .getValue()
         )

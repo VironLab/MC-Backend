@@ -35,35 +35,18 @@
  *<p>
  */
 
-package eu.vironlab.mc.economy
+package eu.vironlab.mc.feature.economy
 
 import eu.thesimplecloud.api.player.IOfflineCloudPlayer
 
+interface EconomyFeature {
 
-class DefaultEconomyProvider(val propertyName: String) : EconomyProvider {
-    override fun getCoins(player: IOfflineCloudPlayer): Long {
-        return player.getProperty<Long>(propertyName)?.getValue() ?: player.let {
-            it.setProperty<Long>(
-                propertyName,
-                1000L
-            ).getValue(); it.update(); 1000L
-        }
-    }
+    fun getCoins(player: IOfflineCloudPlayer): Long
 
-    override fun addCoins(coins: Long, player: IOfflineCloudPlayer) {
-        setCoins(getCoins(player) + coins, player)
-    }
+    fun addCoins(coins: Long, player: IOfflineCloudPlayer)
 
-    override fun removeCoins(coins: Long, player: IOfflineCloudPlayer) {
-        setCoins(getCoins(player) - coins, player)
-    }
+    fun removeCoins(coins: Long, player: IOfflineCloudPlayer)
 
-    override fun setCoins(coins: Long, player: IOfflineCloudPlayer) {
-        if (player.hasProperty(propertyName)) {
-            player.removeProperty(propertyName)
-        }
-        player.setProperty(propertyName, coins)
-        player.update()
-    }
+    fun setCoins(coins: Long, player: IOfflineCloudPlayer)
 
 }

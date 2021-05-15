@@ -35,30 +35,57 @@
  *<p>
  */
 
-package eu.vironlab.mc.punishment
+package eu.vironlab.mc.feature.punishment
 
-import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.player.IOfflineCloudPlayer
 import eu.vironlab.mc.extension.online
+import eu.vironlab.mc.feature.punishmet.PunishmentFeature
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.database.Database
+import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import eu.vironlab.vextension.extension.random
+import java.io.File
 
+class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : PunishmentFeature {
 
-class DefaultPunishmentProvider(val cloudUtil: CloudUtil) : PunishmentProvider {
-
+    val config: ConfigDocument
     val reasonDatabase: Database = cloudUtil.dbClient.getDatabase("punish_reasons").complete()
     val punishmentDatabase: Database = cloudUtil.dbClient.getDatabase("punish_punishments").complete()
+    val kickHeader: String
+    val kickFooter: String
+
+    init {
+        this.config = ConfigDocument(File(configDir, "config.json"))
+        config.loadConfig()
+        this.kickHeader = config.getString(
+            "kickHeader",
+            "\n§8§m━━━━━━━━━━━━━━━━━━━━§8[§2§lViron§a§lLab§8]§m━━━━━━━━━━━━━━━━━━━━ \n\n"
+        )
+        this.kickFooter =
+            config.getString("kickFooter", "\n\n§8§m━━━━━━━━━━━━━━━━━━━━§8[§2§lViron§a§lLab§8]§m━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    override fun getKickMessage(reason: String, player: IOfflineCloudPlayer) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getBanMessage(reason: String, timeout: Long, player: IOfflineCloudPlayer) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getMuteMessage(reason: String, timeout: Long, player: IOfflineCloudPlayer) {
+        TODO("Not yet implemented")
+    }
 
     override fun getReasons(id: Int): Reason? {
-       return reasonDatabase.get(id.toString()).complete()?.toInstance(Reason.TYPE)
+        return reasonDatabase.get(id.toString()).complete()?.toInstance(Reason.TYPE)
     }
 
     override fun getPunishments(player: IOfflineCloudPlayer): Collection<Punishment> {
         val data = punishmentDatabase.get(player.getUniqueId().toString()).complete() ?: return mutableListOf()
         return data.getDocument("punishments")?.toInstance(Punishment.COLLECTION_TYPE) ?: run {
             val rs = mutableListOf<Punishment>()
-            if(data.contains("punishments")) {
+            if (data.contains("punishments")) {
                 data.delete("punishments")
             }
             data.append("punishments", rs)
@@ -67,16 +94,17 @@ class DefaultPunishmentProvider(val cloudUtil: CloudUtil) : PunishmentProvider {
         }
     }
 
-    override fun addPunishment(reasonID: Int, executor: String, proof: Proof, player: IOfflineCloudPlayer): String {
+
+    override fun addPunishment(reasonID: Int, executor: String, player: IOfflineCloudPlayer): String {
         val reason = getReasons(reasonID) ?: throw IllegalStateException("Cannot Punish member for unknown reason")
         val punishments = getPunishments(player).toMutableList()
         var id = String.random(6)
         while (punishments.any { it.id == id }) {
             id = String.random(6)
         }
-        player.online()?.let {
-
-        }
-        TODO("TODO")
+        val timesCount: Int = punishments.filter { it.reason.equals(reason.name, true) }.size
+        val times = reason.times.getOrNull(timesCount) ?: reason.times.last()
+        punishments.add(Punishment(id, reason.name, executor, true, times.points))
+        return id
     }
 }

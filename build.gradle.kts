@@ -67,6 +67,7 @@ subprojects {
         compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
         compileOnly("com.velocitypowered:velocity-api:1.1.5")
         compileOnly("eu.thesimplecloud.simplecloud:simplecloud-api:2.1.0")
+        compileOnly("eu.thesimplecloud.simplecloud:simplecloud-base:2.1.0")
         compileOnly("eu.thesimplecloud.simplecloud:simplecloud-plugin:2.1.0")
         compileOnly("eu.thesimplecloud.simplecloud:simplecloud-module-permission:2.1.0")
     }

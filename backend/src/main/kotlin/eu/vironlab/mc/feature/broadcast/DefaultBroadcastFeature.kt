@@ -35,7 +35,7 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.broadcast
 
 import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.language.LanguageProvider
@@ -47,7 +47,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 
-class TimedBroadcast(messagesFile: File, val cloudUtil: CloudUtil = CloudUtil, val languageProvider: LanguageProvider = cloudUtil.languageProvider) {
+class DefaultBroadcastFeature(messagesFile: File, val cloudUtil: CloudUtil = CloudUtil, val languageProvider: LanguageProvider = cloudUtil.languageProvider) {
 
     val config: ConfigDocument = ConfigDocument(messagesFile).let { it.loadConfig(); it }
     val format: String
@@ -60,12 +60,12 @@ class TimedBroadcast(messagesFile: File, val cloudUtil: CloudUtil = CloudUtil, v
         config.getLong("delay", 5)
         config.getDocument("messages", document().let { doc ->
             doc.append("broadcast.1", document().let { first ->
-                first.append("english", "First Broadcast Message")
-                first.append("german", "Erste Broadcast nachricht")
+                first.append("english", "Join our §3Discord: https://discord.gg/J5FX39UGjP")
+                first.append("german", "Besuche unseren §3Discord: https://discord.gg/J5FX39UGjP")
             })
             doc.append("broadcast.2", document().let { first ->
-                first.append("english", "Second Broadcast Message")
-                first.append("german", "Zweite Broadcast nachricht")
+                first.append("english", "SourceCode of our Network: §ehttps://github.com/VironLab")
+                first.append("german", "Quellcode des Netzwerks: §ehttps://github.com/VironLab")
             })
         })
         config.saveConfig()

@@ -35,18 +35,25 @@
  *<p>
  */
 
-package eu.vironlab.mc.economy
+package eu.vironlab.mc.feature.punishmet
 
 import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+import eu.vironlab.mc.feature.punishment.Punishment
+import eu.vironlab.mc.feature.punishment.Reason
 
-interface EconomyProvider {
 
-    fun getCoins(player: IOfflineCloudPlayer): Long
+interface PunishmentFeature {
 
-    fun addCoins(coins: Long, player: IOfflineCloudPlayer)
+    fun getKickMessage(reason: String, player: IOfflineCloudPlayer)
 
-    fun removeCoins(coins: Long, player: IOfflineCloudPlayer)
+    fun getBanMessage(reason: String, timeout: Long, player: IOfflineCloudPlayer)
 
-    fun setCoins(coins: Long, player: IOfflineCloudPlayer)
+    fun getMuteMessage(reason: String, timeout: Long, player: IOfflineCloudPlayer)
+
+    fun getReasons(id: Int): Reason?
+
+    fun getPunishments(player: IOfflineCloudPlayer): Collection<Punishment>
+
+    fun addPunishment(reasonID: Int, executor: String, player: IOfflineCloudPlayer): String
 
 }

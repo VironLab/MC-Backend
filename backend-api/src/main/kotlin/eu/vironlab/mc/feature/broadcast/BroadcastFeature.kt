@@ -35,62 +35,17 @@
  *<p>
  */
 
-package eu.vironlab.mc.punishment
+package eu.vironlab.mc.feature.broadcast
 
-import com.google.gson.reflect.TypeToken
-import eu.vironlab.vextension.lang.Nameable
-import java.lang.reflect.Type
-import java.util.concurrent.TimeUnit
+import eu.vironlab.vextension.document.Document
+import eu.vironlab.vextension.document.document
 
-/**
- * @param name is the Name of the
- * @param times are the points given by times of punishments by the same reason
- * @param permission is the Permission needed to use the reasonTime
- * @param level is the Level wich is needed to ignore the Reason
- * @param proof is the type of the Proof
- */
-data class Reason(
-    val id: Int,
-    override val name: String,
-    val times: MutableCollection<ReasonTime>,
-    val permission: String,
-    val level: IgnoreLevel,
-    val proofType: ProofType
-) : Nameable {
-    companion object {
-        @JvmStatic
-        val TYPE: Type = object : TypeToken<Reason>() {}.type
+interface BroadcastFeature {
+
+    fun broadcastMessage(message: String) {
+        broadcastMessage(message, document())
     }
-}
 
-data class ReasonTime(val times: String, val points: Int)
+    fun broadcastMessage(message: String, placeholder: Document)
 
-data class Point(val points: Int, val length: Int, val unit: TimeUnit, val type: PointType)
-
-data class Proof(val type: ProofType, val id: String)
-
-data class Punishment(
-    val id: String,
-    val reason: String,
-    val points: Int,
-    val executor: String,
-    val timeout: Long,
-    val proofId: String
-) {
-    companion object {
-        @JvmStatic
-        val COLLECTION_TYPE: Type = object : TypeToken<Collection<Punishment>>() {}.type
-    }
-}
-
-enum class IgnoreLevel(val strange: Int) {
-    LOW(1), MIDDLE(2), HIGH(3), HIGHEST(4)
-}
-
-enum class ProofType {
-    REPLAY, CHATLOG
-}
-
-enum class PointType {
-    MUTE, BAN
 }

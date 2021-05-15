@@ -35,20 +35,10 @@
  *<p>
  */
 
-package eu.vironlab.mc.punishment
+package eu.vironlab.mc.feature
 
-import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+interface FeatureRegistry {
 
-fun IOfflineCloudPlayer.getPunishments(): Collection<Punishment> {
-    return ExtensionPunishInstance.punishmanager.getPunishments(this)
-}
-
-fun IOfflineCloudPlayer.addPunishment(id: Int, executor: String, proof: Proof): String {
-    return ExtensionPunishInstance.punishmanager.addPunishment(id, executor, proof, this)
-}
-
-object ExtensionPunishInstance {
-
-    lateinit var punishmanager: PunishmentProvider
+    fun <T> getFeature(featureClass: Class<T>)
 
 }
