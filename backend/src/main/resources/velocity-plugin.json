@@ -1,0 +1,15 @@
+{
+  "id": "backend",
+  "name": "Backend",
+  "version": "1.0",
+  "dependencies": [
+    {
+      "id": "simplecloud_plugin",
+      "optional": false
+    }
+  ],
+  "authors": [
+    "Infinity_dev"
+  ],
+  "main": "eu.vironlab.mc.velocity.VelocityLoader"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Backend",
+  "author": "Infinity_dev",
+  "mainClass": "eu.vironlab.mc.Backend",
+  "moduleCopyType": "ALL",
+  "repositories": [],
+  "dependencies": [],
+  "depend": [
+    "SimpleCloud-Permission"
+  ],
+  "softDepend": []
+}

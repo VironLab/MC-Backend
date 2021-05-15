@@ -1,0 +1,10 @@
+name: Backend
+version: 1.0
+main: eu.vironlab.mc.bukkit.BukkitLoader
+author: Infinity_dev
+depend:
+  - SimpleCloud-Plugin
+  - SimpleCloud-Permission
+loadbefore:
+  - SimpleCloud-Plugin
+  - SimpleCloud-Permission
