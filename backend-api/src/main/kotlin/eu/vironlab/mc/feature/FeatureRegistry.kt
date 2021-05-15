@@ -39,6 +39,8 @@ package eu.vironlab.mc.feature
 
 interface FeatureRegistry {
 
-    fun <T> getFeature(featureClass: Class<T>)
+    fun <T> getFeature(featureClass: Class<T>): T
+
+    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
 
 }

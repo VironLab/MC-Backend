@@ -41,44 +41,37 @@ import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 import java.util.concurrent.TimeUnit
 
-
 enum class PunishType {
-    WARN, BAN, MUTE, PERMA_BAN, PERMA_MUTE
+    WARN, MUTE, BAN, PERMA_BAN, PERMA_MUTE;
 }
 
 data class Punishment(
-    val name: String,
+    val id: String,
     val active: Boolean,
-    val punishId: String,
+    val executor: String, //System or UUID
+    val reason: String,
     val type: PunishType,
-    val times: Int,
-    val team: String,
-    val unPunishedReason: String,
-    val unit: TimeUnit,
-    val discharge: Long,
-    val punishedAt: Long,
-    val unPunishedAt: Long,
-    val unPunishedBy: String
+    val executionTime: Long,
+    val expirationTime: Long,
+    val unPunishReason: String? = null,
+    val unPunishExecutor: String? = null
 ) {
     companion object {
-
         @JvmStatic
-        val TYPE: Type = object : TypeToken<Punishment>() {}.type
-
+        val COLLECTION_TYPE: Type = object : TypeToken<MutableList<Punishment>>() {}.type
     }
 }
 
-data class PunishmentReason(
+data class PunishReason(
     val id: Int,
     val name: String,
-    val permission: String,
-    val lengths: MutableList<PunishmentReasonTime>
-)
+    val durations: MutableList<PunishDuration>
+) {
+}
 
-data class PunishmentReasonTime(
+data class PunishDuration(
     val times: Int,
     val length: Long,
-    val type: PunishType,
-    val unit: TimeUnit
+    val unit: TimeUnit,
+    val type: PunishType
 )
-

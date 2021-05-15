@@ -41,6 +41,7 @@ import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.external.ICloudModule
 import eu.vironlab.mc.feature.economy.DefaultEconomyFeature
 import eu.vironlab.mc.extension.connectionData
+import eu.vironlab.mc.feature.DefaultFeatureRegistry
 import eu.vironlab.mc.feature.broadcast.DefaultBroadcastFeature
 import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
 import eu.vironlab.mc.language.DefaultLanguage
@@ -90,14 +91,14 @@ class Backend : ICloudModule {
             val db = initDatabase()
             CloudUtil.init(
                 db.first,
-                DefaultEconomyFeature("coins"),
+                config.getString("prefix")!!,
+                dataFolder.toPath(),
                 DefaultLanguageProvider().let {
                     it.registerLanguage(DefaultLanguage("english", db.first, config.getString("prefix")!!))
                     it.registerLanguage(DefaultLanguage("german", db.first, config.getString("prefix")!!))
                     it
                 },
-                config.getString("prefix")!!,
-                dataFolder.toPath()
+                DefaultFeatureRegistry()
             )
             CloudAPI.instance.getGlobalPropertyHolder().let {
                 it.setProperty<String>("dataFolder", dataFolder.toPath().toUri().toString())

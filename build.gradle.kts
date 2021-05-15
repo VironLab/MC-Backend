@@ -70,6 +70,7 @@ subprojects {
         compileOnly("eu.thesimplecloud.simplecloud:simplecloud-base:2.1.0")
         compileOnly("eu.thesimplecloud.simplecloud:simplecloud-plugin:2.1.0")
         compileOnly("eu.thesimplecloud.simplecloud:simplecloud-module-permission:2.1.0")
+        implementation("joda-time:joda-time:2.9.9")
     }
 
 
