@@ -52,8 +52,8 @@ import eu.vironlab.mc.Backend
 import eu.vironlab.mc.extension.replace
 import eu.vironlab.vextension.document.document
 
-@Command("punish", CommandType.INGAME, "backend.cmd.punish", aliases = ["ban", "kick", "mute"])
-class PunishmentCommand(val punishFeature: PunishmentFeature, val messageConfig: PunishmentMessageConfig) :
+@Command("punish", CommandType.INGAME, "backend.cmd.punish", aliases = ["ban", "kick", "mute", "ban-ip"])
+class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val messageConfig: PunishmentMessageConfig) :
     ICommandHandler {
 
     val infoMessage: String =
@@ -96,11 +96,37 @@ class PunishmentCommand(val punishFeature: PunishmentFeature, val messageConfig:
         sendInfo(sender)
     }
 
-    @CommandSubPath("info <user>")
+    @CommandSubPath("info <user> <id>")
+    fun sendSpecificInfo(
+        sender: ICommandSender,
+        @CommandArgument("user", CloudPlayerCommandSuggestionProvider::class) user: String,
+        @CommandArgument("id", CloudPlayerCommandSuggestionProvider::class) idStr: String,
+    ) {}
+
+    @CommandSubPath("<user> info")
     fun sendPlayerInfo(
         sender: ICommandSender,
         @CommandArgument("user", CloudPlayerCommandSuggestionProvider::class) user: String
     ) {
+        if (!sender.hasPermissionSync("backend.cmd.punish.info")) {
+            sender.sendMessage(messageConfig.prefix + messageConfig.cannotAccessInfo)
+            return@sendPlayerInfo
+        }
+        val target = CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(user).getBlockingOrNull() ?: run {
+            sender.sendMessage(messageConfig.prefix + Backend.instance.messages.playerNotExist.replace("%name%", user))
+            return@sendPlayerInfo
+        }
+        val punishments = punishFeature.getPunishments(target.getUniqueId()).punishments.also {
+            if (it.isEmpty()) {
+                sender.sendMessage(messageConfig.prefix + messageConfig.noPunishments)
+                return@sendPlayerInfo
+            }
+        }
+        val msg = StringBuilder(messageConfig.prefix).append(messageConfig.infoHeader.replace("%name%", target.getName()))
+        punishments.forEach {
+            msg.append("\n" + messageConfig.prefix + messageConfig.infoTemplate.replace(document("id", it.id).append("reason", it.reason).append("type", it.type).append("active", it.active)))
+        }
+        sender.sendMessage(msg.toString())
     }
 
     @CommandSubPath("<user> <id>")
@@ -109,6 +135,10 @@ class PunishmentCommand(val punishFeature: PunishmentFeature, val messageConfig:
         @CommandArgument("user", CloudPlayerCommandSuggestionProvider::class) user: String,
         @CommandArgument("id", PunishIdSuggestionProvider::class) idStr: String
     ) {
+        if (idStr.equals("info", true)) {
+            sendPlayerInfo(sender, user)
+            return
+        }
         if (sender is ICloudPlayer) {
             if (sender.getName().equals(user, true)) {
                 sender.sendMessage(messageConfig.prefix + messageConfig.cantPunishOwn)
@@ -158,7 +188,7 @@ class PunishmentCommand(val punishFeature: PunishmentFeature, val messageConfig:
         }
         val punishId = punishFeature.addPunishment(
             id,
-            if (sender is ICloudPlayer) sender.getUniqueId().toString() else "System", target
+            if (sender is ICloudPlayer) sender.getUniqueId().toString() else "System", target.getUniqueId()
         )
         sender.sendMessage(
             messageConfig.prefix + messageConfig.punishSuccess.replace(
@@ -187,7 +217,7 @@ class PunishIdSuggestionProvider : ICommandSuggestionProvider {
 
     companion object {
         @JvmStatic
-        val ids: MutableList<String> = mutableListOf()
+        val ids: MutableList<String> = mutableListOf("info")
     }
 
 }

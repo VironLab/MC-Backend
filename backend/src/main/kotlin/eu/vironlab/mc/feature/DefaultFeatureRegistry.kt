@@ -9,7 +9,7 @@ class DefaultFeatureRegistry : FeatureRegistry {
         return (this.features[featureClass] ?: throw IllegalStateException("Feature not Registered")) as T
     }
 
-    override fun <T, E : T> registerFeature(featureClass: Class<T>, impl: E): E {
+    override fun <T, E : T> registerFeature(featureClass: Class<T>, impl: Any): Any {
         this.features[featureClass] = impl!!
         return impl
     }

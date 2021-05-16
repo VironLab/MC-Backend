@@ -6,6 +6,10 @@
     {
       "id": "simplecloud_plugin",
       "optional": false
+    },
+    {
+      "id": "simplecloud_permission",
+      "optional": false
     }
   ],
   "authors": [

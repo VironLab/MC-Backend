@@ -83,7 +83,7 @@ class DefaultBroadcastFeature(
                         )
                     )
                 }
-            }, config.getLong("delay")!!, config.getLong("delay")!!, TimeUnit.MINUTES
+            }, 0, config.getLong("delay")!!, TimeUnit.MINUTES
         )
     }
 

@@ -39,7 +39,6 @@ package eu.vironlab.mc.util
 
 import eu.vironlab.mc.feature.FeatureRegistry
 import eu.vironlab.vextension.database.DatabaseClient
-import eu.vironlab.vextension.document.Document
 import java.nio.file.Path
 
 object CloudUtil {

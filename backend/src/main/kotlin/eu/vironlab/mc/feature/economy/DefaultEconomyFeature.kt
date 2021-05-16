@@ -38,9 +38,25 @@
 package eu.vironlab.mc.feature.economy
 
 import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+import eu.thesimplecloud.launcher.startup.Launcher
+import eu.vironlab.vextension.document.wrapper.ConfigDocument
+import java.io.File
 
 
-class DefaultEconomyFeature(val propertyName: String) : EconomyFeature {
+class DefaultEconomyFeature(val propertyName: String, val configDir: File) : EconomyFeature {
+
+    val messages: EconomyMessageConfiguration
+
+    init {
+        this.messages = ConfigDocument(File(configDir, "messages.json")).let {
+            it.loadConfig(); it.get(
+            "messages",
+            EconomyMessageConfiguration::class.java,
+            EconomyMessageConfiguration()
+        )
+        }
+    }
+
     override fun getCoins(player: IOfflineCloudPlayer): Long {
         return player.getProperty<Long>(propertyName)?.getValue() ?: player.let {
             it.setProperty<Long>(

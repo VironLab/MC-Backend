@@ -38,24 +38,24 @@
 package eu.vironlab.mc.feature.punishment
 
 import eu.thesimplecloud.api.CloudAPI
-import eu.thesimplecloud.api.player.IOfflineCloudPlayer
-import eu.thesimplecloud.launcher.startup.Launcher
 import eu.thesimplecloud.module.permission.PermissionPool
-import eu.vironlab.mc.Backend
-import eu.vironlab.mc.extension.online
 import eu.vironlab.mc.extension.replace
+import eu.vironlab.mc.feature.punishment.event.PunishmentAddEvent
+import eu.vironlab.mc.feature.punishment.event.PunishmentUpdateEvent
 import eu.vironlab.mc.util.CloudUtil
+import eu.vironlab.mc.util.EventUtil
 import eu.vironlab.vextension.database.Database
 import eu.vironlab.vextension.document.document
 import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import eu.vironlab.vextension.extension.random
 import java.io.File
+import java.util.*
 import java.util.concurrent.TimeUnit
 import org.joda.time.Period
 import org.joda.time.format.PeriodFormatter
 import org.joda.time.format.PeriodFormatterBuilder
 
-class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File, val backend: Backend) : PunishmentFeature {
+class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : PunishmentFeature {
 
     val messages: PunishmentMessageConfig
     val reasonConfig: ConfigDocument = ConfigDocument(File(configDir, "reasons.json")).let {
@@ -86,11 +86,9 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File, val ba
             .appendSeconds().appendSuffix(" ${messages.times.second}", " ${messages.times.seconds}")
             .printZeroNever()
             .toFormatter()
-        Launcher.instance.commandManager.registerCommand(backend, PunishmentCommand(this, messages))
-        CloudAPI.instance.getEventManager().registerListener(backend, PunishmentListener())
     }
 
-    override fun getKickMessage(reason: String, player: IOfflineCloudPlayer): String =
+    override fun getKickMessage(reason: String): String =
         this.messages.kickHeader + this.messages.kickMessage.replace(
             document(
                 "reason",
@@ -99,39 +97,51 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File, val ba
         ) + this.messages.kickFooter
 
 
-    override fun getBanMessage(punishment: Punishment, player: IOfflineCloudPlayer): String =
+    override fun getBanMessage(punishment: Punishment): String =
         this.messages.kickHeader + this.messages.banMessage.replace(
-            document("reason", punishment.reason).append("timeout", dischargeString(punishment.expirationTime, player))
+            document("reason", punishment.reason).append("timeout", dischargeString(punishment.expirationTime))
                 .append("id", punishment.id)
         ) + this.messages.kickFooter
 
-    override fun getMuteMessage(punishment: Punishment, player: IOfflineCloudPlayer): String =
+    override fun updatePunishments(player: UUID, punishments: PlayerPunishmentData) {
+        val data = document(punishments)
+        if (!punishmentDatabase.update(player.toString(), data)
+                .complete()
+        ) {
+            punishmentDatabase.insert(player.toString(), data).complete()
+        }
+        EventUtil.callGlobal(PunishmentUpdateEvent(punishments.punishments, player))
+    }
+
+    override fun getMuteMessage(punishment: Punishment): String =
         this.messages.muteMessage.replace(
-            document("reason", punishment.reason).append("timeout", dischargeString(punishment.expirationTime, player))
+            document("reason", punishment.reason).append("timeout", dischargeString(punishment.expirationTime))
                 .append("id", punishment.id)
         )
 
-    fun dischargeString(timeout: Long, player: IOfflineCloudPlayer): String =
+    fun dischargeString(timeout: Long): String =
         this.periodFormatter.print(Period(System.currentTimeMillis(), timeout))
 
 
     override fun getReason(id: Int): PunishReason? = this.reasons[id]
 
-    override fun getPunishments(player: IOfflineCloudPlayer): Collection<Punishment> =
-        punishmentDatabase.get(player.getUniqueId().toString()).complete()?.getDocument("punishments")
-            ?.toInstance(Punishment.COLLECTION_TYPE)
-            ?: mutableListOf()
+    override fun getPunishments(player: UUID): PlayerPunishmentData {
+        return punishmentDatabase.get(player.toString()).complete()?.toInstance(PlayerPunishmentData.TYPE)
+            ?: PlayerPunishmentData(
+                mutableListOf()
+            )
+    }
 
-    override fun addPunishment(reasonID: Int, executor: String, player: IOfflineCloudPlayer): String {
+    override fun addPunishment(reasonID: Int, executor: String, player: UUID): String {
         val reason = getReason(reasonID) ?: throw IllegalStateException("Invalid Reason ID!")
         if (reason.ignorePermission != null) {
-            if (PermissionPool.instance.getPermissionPlayerManager().getPermissionPlayer(player.getUniqueId())
+            if (PermissionPool.instance.getPermissionPlayerManager().getPermissionPlayer(player)
                     .getBlocking().hasPermission(reason.ignorePermission!!)
             ) {
                 return "NOT PUNISHED -> IGNORE PERMISSION GIVEN"
             }
         }
-        val punishments = getPunishments(player).toMutableList()
+        val punishments = getPunishments(player).punishments.toMutableList()
         val punishmentsOfTypeCount = punishments.count { it.reason == reason.name }
         var id = String.random(6)
         while (punishments.any { it.id == id }) id = String.random(6)
@@ -148,15 +158,19 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File, val ba
         punishments.add(
             punishment
         )
-        if (!punishmentDatabase.update(player.getUniqueId().toString(), document("punishments", punishments))
+        val data = document(PlayerPunishmentData(punishments))
+        if (!punishmentDatabase.update(player.toString(), data)
                 .complete()
         ) {
-            punishmentDatabase.insert(player.getUniqueId().toString(), document("punishments", punishments)).complete()
+            punishmentDatabase.insert(player.toString(), data).complete()
         }
-        when (duration.type) {
-            PunishType.BAN, PunishType.PERMA_BAN -> player.online()?.kick(getBanMessage(punishment, player))
-            PunishType.MUTE, PunishType.PERMA_MUTE -> player.online()?.sendMessage(getMuteMessage(punishment, player))
-            PunishType.WARN -> player.online()?.kick(getKickMessage(punishment.reason, player))
+        EventUtil.callGlobal(PunishmentAddEvent(punishment, player))
+        CloudAPI.instance.getCloudPlayerManager().getCachedCloudPlayer(player)?.let {
+            when (duration.type) {
+                PunishType.BAN, PunishType.PERMA_BAN -> it.kick(getBanMessage(punishment))
+                PunishType.MUTE, PunishType.PERMA_MUTE -> it.sendMessage(getMuteMessage(punishment))
+                PunishType.WARN -> it.kick(getKickMessage(punishment.reason))
+            }
         }
 
         return id

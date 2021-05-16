@@ -21,6 +21,13 @@ class PunishmentMessageConfig {
     val targetIgnoreReason = "You cannot Punish §2%target% §7with Reason §2%reason%"
     val cantPunishOwn = "You cannot Punish yourself"
     val punishSuccess = "You Punished §2%target%§7 for §a%reason%§7 Id: §a%id%"
+    val cannotAccessInfo = "You cant Access the Info of a User"
+    val infoHeader = "Info for %name%"
+    val noPunishments = "The Player §2%name% §7has no Punishments"
+    val invalidId = "The ID #%id% is invalid for this player"
+    val unpunishSuccess = "You successfully unpunished §2%player%§7, §2Id: §a%id%"
+    val infoTemplate = "§2%id% §8- §a%reason% §8- §a%type% §8- §a%active%"
+    val punishmentInactive = "The Id §2%id% §7is already inactive"
     val times: Times = Times()
 
     class Times {

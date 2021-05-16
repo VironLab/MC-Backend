@@ -37,23 +37,25 @@
 
 package eu.vironlab.mc.feature.punishment
 
-import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+import java.util.*
 
 
 interface PunishmentFeature {
 
-    fun getKickMessage(reason: String, player: IOfflineCloudPlayer): String
+    fun getKickMessage(reason: String): String
 
-    fun getBanMessage(punishment: Punishment, player: IOfflineCloudPlayer): String
+    fun getBanMessage(punishment: Punishment): String
 
-    fun getMuteMessage(punishment: Punishment, player: IOfflineCloudPlayer): String
+    fun updatePunishments(player: UUID, data: PlayerPunishmentData)
+
+    fun getMuteMessage(punishment: Punishment): String
 
     val reasons: MutableMap<Int, PunishReason>
 
     fun getReason(id: Int): PunishReason?
 
-    fun getPunishments(player: IOfflineCloudPlayer): Collection<Punishment>
+    fun getPunishments(player: UUID): PlayerPunishmentData
 
-    fun addPunishment(reasonID: Int, executor: String, player: IOfflineCloudPlayer): String
+    fun addPunishment(reasonID: Int, executor: String, player: UUID): String
 
 }

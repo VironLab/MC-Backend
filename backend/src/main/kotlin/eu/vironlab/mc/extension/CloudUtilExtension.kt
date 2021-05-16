@@ -40,11 +40,12 @@ package eu.vironlab.mc.extension
 import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.VextensionDownloader
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
+import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
+import eu.vironlab.mc.feature.punishment.PunishmentFeature
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.database.factory.createDatabaseClient
 import eu.vironlab.vextension.database.mongo.MongoDatabaseClient
 import eu.vironlab.vextension.document.documentFromJson
-import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import java.io.File
 import java.net.URI
 import java.nio.file.Paths
@@ -71,11 +72,21 @@ fun CloudUtil.initOnService() {
             CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("prefix").getBlocking().getValue()
         this.dbClient = createDatabaseClient(MongoDatabaseClient::class.java) {
             this.connectionData =
-                CloudAPI.instance.getGlobalPropertyHolder().requestProperty<ConfigDocument>("dbConnection")
-                    .getBlocking()
-                    .getValue().connectionData()
+                documentFromJson(
+                    CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("dbConnection")
+                        .getBlocking()
+                        .getValue()
+                ).connectionData()
+        }.also { it.init() }
+        this.featureRegistry = DefaultFeatureRegistry().also {
+            CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("punishmentDir").getBlockingOrNull()
+                ?.getValue()?.let { pathStr ->
+                    it.registerFeature(
+                        PunishmentFeature::class.java,
+                        DefaultPunishmentFeature(this, File(pathStr))
+                    )
+                }
         }
-        this.featureRegistry = DefaultFeatureRegistry()
     } catch (e: Exception) {
         e.printStackTrace()
     }

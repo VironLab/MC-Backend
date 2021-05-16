@@ -39,11 +39,16 @@ package eu.vironlab.mc
 
 import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.external.ICloudModule
+import eu.thesimplecloud.launcher.startup.Launcher
 import eu.vironlab.mc.config.BackendMessageConfiguration
 import eu.vironlab.mc.extension.connectionData
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
 import eu.vironlab.mc.feature.broadcast.DefaultBroadcastFeature
+import eu.vironlab.mc.feature.economy.DefaultEconomyFeature
+import eu.vironlab.mc.feature.economy.EconomyCommand
 import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
+import eu.vironlab.mc.feature.punishment.PunishmentCommand
+import eu.vironlab.mc.feature.punishment.UnpunishCommand
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.collection.DataPair
 import eu.vironlab.vextension.database.DatabaseClient
@@ -99,15 +104,15 @@ class Backend : ICloudModule {
                 db.first,
                 config.getString("prefix")!!,
                 dataFolder.toPath(),
-                DefaultFeatureRegistry()
+                DefaultFeatureRegistry(),
             )
+            startFeatures(config.getDocument("features")!!)
             CloudAPI.instance.getGlobalPropertyHolder().let {
                 it.setProperty<String>("dataFolder", dataFolder.toPath().toUri().toString())
                 it.setProperty<String>("prefix", CloudUtil.prefix)
                 it.setProperty<String>("coinsPropertyName", "coins")
-                it.setProperty<ConfigDocument>("dbConnection", db.second)
+                it.setProperty<String>("dbConnection", db.second.toJson())
             }
-            startFeatures(config.getDocument("features")!!)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -124,7 +129,15 @@ class Backend : ICloudModule {
             DefaultBroadcastFeature(File(dataFolder, "/broadcast/autobroadcast.json"))
         }
         if (cfg.getBoolean("punishment")!!) {
-            DefaultPunishmentFeature(CloudUtil, File(dataFolder, "punishment/"), this)
+            val punish = DefaultPunishmentFeature(CloudUtil, File(dataFolder, "punishment/").also {
+                CloudAPI.instance.getGlobalPropertyHolder().setProperty("punishmentDir", it.absolutePath)
+            })
+            Launcher.instance.commandManager.registerCommand(this, PunishmentCommand(punish, punish.messages))
+            Launcher.instance.commandManager.registerCommand(this, UnpunishCommand(punish, punish.messages))
+        }
+        if (cfg.getBoolean("economy")!!) {
+            val eco = DefaultEconomyFeature("coins", File(dataFolder, "economy/"))
+            Launcher.instance.commandManager.registerCommand(this, EconomyCommand(eco, eco.messages))
         }
     }
 
@@ -132,7 +145,8 @@ class Backend : ICloudModule {
         val msgConfig = ConfigDocument(File(dataFolder, "messages.json")).also {
             it.loadConfig()
         }
-        this.messages = msgConfig.get("messages", BackendMessageConfiguration::class.java, BackendMessageConfiguration())
+        this.messages =
+            msgConfig.get("messages", BackendMessageConfiguration::class.java, BackendMessageConfiguration())
         msgConfig.saveConfig()
         this.config = ConfigDocument(File(dataFolder, "config.json"))
         config.loadConfig()
@@ -141,6 +155,7 @@ class Backend : ICloudModule {
         val features = document()
         features.getBoolean("broadcast", true)
         features.getBoolean("punishment", true)
+        features.getBoolean("economy", true)
 
         config.let {
             it.getString("prefix", "§2§lViron§a§lLab §8| §7")

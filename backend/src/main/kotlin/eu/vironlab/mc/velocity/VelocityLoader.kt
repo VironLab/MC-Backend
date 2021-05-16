@@ -38,14 +38,28 @@
 package eu.vironlab.mc.velocity
 
 import com.google.inject.Inject
+import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
+import com.velocitypowered.api.proxy.ProxyServer
+import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.extension.initOnService
+import eu.vironlab.mc.feature.punishment.PunishmentFeature
+import eu.vironlab.mc.feature.punishment.PunishmentListener
 import eu.vironlab.mc.util.CloudUtil
+import org.slf4j.Logger
 
-
-class VelocityLoader @Inject constructor() {
+class VelocityLoader @Inject constructor(val server: ProxyServer, val logger: Logger) {
 
     init {
+        logger.info("=== Backend by VironLab - https://github.com/VironLab ===")
+    }
+
+    @Subscribe
+    fun init(event: ProxyInitializeEvent) {
         CloudUtil.initOnService()
+        val listener = PunishmentListener(CloudUtil.featureRegistry.getFeature(PunishmentFeature::class.java))
+        server.eventManager.register(this, listener)
+        CloudAPI.instance.getEventManager().registerListener(CloudAPI.instance.getThisSidesCloudModule(), listener)
     }
 
 }

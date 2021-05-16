@@ -35,46 +35,15 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.punishment
+package eu.vironlab.mc.feature.economy
 
-import com.google.gson.reflect.TypeToken
-import java.lang.reflect.Type
-import java.util.concurrent.TimeUnit
+import eu.vironlab.mc.util.CloudUtil
 
-enum class PunishType {
-    WARN, MUTE, BAN, PERMA_BAN, PERMA_MUTE;
+
+class EconomyMessageConfiguration {
+
+    val prefix: String = CloudUtil.prefix
+    val coinInfo = "You have §a%coins% §7Coins"
+    val cannotEdit = "You are not allowed to edit Coins"
+
 }
-
-data class Punishment(
-    val id: String,
-    val active: Boolean,
-    val executor: String, //System or UUID
-    val reason: String,
-    val type: PunishType,
-    val executionTime: Long,
-    val expirationTime: Long,
-    val unPunishReason: String? = null,
-    val unPunishExecutor: String? = null
-) {
-}
-
-data class PunishReason(
-    val id: Int,
-    val name: String,
-    val durations: MutableList<PunishDuration>
-) {
-}
-
-data class PlayerPunishmentData(val punishments: List<Punishment>) {
-    companion object {
-        @JvmStatic
-        val TYPE: Type = object : TypeToken<PlayerPunishmentData>() {}.type
-    }
-}
-
-data class PunishDuration(
-    val times: Int,
-    val length: Long,
-    val unit: TimeUnit,
-    val type: PunishType
-)

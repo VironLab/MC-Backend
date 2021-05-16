@@ -37,16 +37,108 @@
 
 package eu.vironlab.mc.feature.punishment
 
+import com.velocitypowered.api.event.PostOrder
+import com.velocitypowered.api.event.ResultedEvent
+import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.connection.DisconnectEvent
+import com.velocitypowered.api.event.connection.LoginEvent
+import com.velocitypowered.api.event.player.PlayerChatEvent
 import eu.thesimplecloud.api.eventapi.CloudEventHandler
 import eu.thesimplecloud.api.eventapi.IListener
-import org.bukkit.event.player.PlayerLoginEvent
+import eu.vironlab.mc.feature.punishment.event.PunishmentAddEvent
+import eu.vironlab.mc.feature.punishment.event.PunishmentUpdateEvent
+import java.util.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import net.kyori.adventure.text.Component
 
 
-class PunishmentListener : IListener{
+class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
+
+    val mutes: MutableMap<UUID, MutableList<Punishment>> = mutableMapOf()
+
+    @Subscribe(order = PostOrder.FIRST)
+    fun handleJoin(e: LoginEvent) {
+        check(e.player.uniqueId, type = arrayOf(PunishType.BAN, PunishType.PERMA_BAN))?.let {
+            e.result = ResultedEvent.ComponentResult.denied(Component.text(punishmentFeature.getBanMessage(it)))
+        }
+    }
+
+    @Subscribe(order = PostOrder.FIRST)
+    fun handleMessage(e: PlayerChatEvent) {
+        println(mutes.keys.toString())
+        println(mutes[UUID.fromString("7c79c553-56ef-497a-b9b8-87aafbdb3e28")]!!.map { it.toString() + "\n"})
+        if (mutes[e.player.uniqueId]?.isNotEmpty() == true) {
+            check(e.player.uniqueId, mutes[e.player.uniqueId]!!, update = false, PunishType.MUTE, PunishType.PERMA_MUTE)?.let {
+                e.player.sendMessage(Component.text(punishmentFeature.getMuteMessage(it)))
+                e.result = PlayerChatEvent.ChatResult.denied()
+            }
+        }
+    }
+
+    private fun check(
+        player: UUID,
+        punishments: MutableList<Punishment> = punishmentFeature.getPunishments(player).punishments.toMutableList(),
+        update: Boolean = true,
+        vararg type: PunishType
+    ): Punishment? {
+        if (punishments.isEmpty()) {
+            return null
+        }
+        val activePunishments = punishments.filter { it.active }
+        GlobalScope.launch {
+            val mutesToAdd: MutableList<Punishment> = mutableListOf()
+            var updatePunishments = false
+            punishments.forEach {
+                if (it.active && it.expirationTime < System.currentTimeMillis()) {
+                    it.active = false
+                    updatePunishments = true
+                } else if (it.type == PunishType.MUTE || it.type == PunishType.PERMA_MUTE)
+                    mutesToAdd.add(it)
+            }
+            mutes[player] = mutesToAdd
+            if (update && updatePunishments)
+                punishmentFeature.updatePunishments(player, PlayerPunishmentData(punishments))
+        }
+        val validPunishments = activePunishments.filter { type.contains(it.type) }.toMutableList()
+        validPunishments.sortWith { b, a ->
+            a.executionTime.compareTo(b.executionTime)
+        }
+        if (validPunishments.isNotEmpty())
+            validPunishments[0].let {
+                if (it.expirationTime < System.currentTimeMillis())
+                    return it
+            }
+        return null
+    }
 
     @CloudEventHandler
-    fun handleJoin(event: PlayerLoginEvent) {
-
+    fun handlePunishmentUpdate(e: PunishmentUpdateEvent) {
+        for (punishment in e.punishment)
+            when (punishment.type) {
+                PunishType.MUTE, PunishType.PERMA_MUTE ->
+                    if (!punishment.active)
+                        mutes[e.target]!!.removeIf { punishment.id == it.id }
+                    else if (!mutes[e.target]!!.any { it.id == punishment.id }) mutes[e.target]!!.add(punishment)
+            }
     }
+
+    @CloudEventHandler
+    fun handlePunishmentAdd(e: PunishmentAddEvent) {
+        when (e.punishment.type) {
+            PunishType.MUTE, PunishType.PERMA_MUTE ->
+                if (mutes.containsKey(e.target)) {
+                    mutes[e.target]!!.add(e.punishment)
+                }
+        }
+    }
+
+    @Subscribe
+    fun handleQuit(e: DisconnectEvent) {
+        if (this.mutes.containsKey(e.player.uniqueId)) {
+            this.mutes.remove(e.player.uniqueId)
+        }
+    }
+
 
 }
