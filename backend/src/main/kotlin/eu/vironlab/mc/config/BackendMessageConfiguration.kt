@@ -35,25 +35,12 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.punishment
-
-import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+package eu.vironlab.mc.config
 
 
-interface PunishmentFeature {
+class BackendMessageConfiguration {
 
-    fun getKickMessage(reason: String, player: IOfflineCloudPlayer): String
-
-    fun getBanMessage(punishment: Punishment, player: IOfflineCloudPlayer): String
-
-    fun getMuteMessage(punishment: Punishment, player: IOfflineCloudPlayer): String
-
-    val reasons: MutableMap<Int, PunishReason>
-
-    fun getReason(id: Int): PunishReason?
-
-    fun getPunishments(player: IOfflineCloudPlayer): Collection<Punishment>
-
-    fun addPunishment(reasonID: Int, executor: String, player: IOfflineCloudPlayer): String
+    val interferedType = "Interfered type is %given% but %requested% is needed"
+    val playerNotExist = "The Player §2%name% §7was not found"
 
 }

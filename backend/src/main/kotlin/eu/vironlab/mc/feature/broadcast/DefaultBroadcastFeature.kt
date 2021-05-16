@@ -37,19 +37,21 @@
 
 package eu.vironlab.mc.feature.broadcast
 
+import com.google.gson.reflect.TypeToken
 import eu.thesimplecloud.api.CloudAPI
-import eu.vironlab.mc.language.LanguageProvider
 import eu.vironlab.mc.util.CloudUtil
-import eu.vironlab.vextension.document.document
 import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 
-class DefaultBroadcastFeature(messagesFile: File, val cloudUtil: CloudUtil = CloudUtil, val languageProvider: LanguageProvider = cloudUtil.languageProvider) {
+class DefaultBroadcastFeature(
+    messagesFile: File,
+    val cloudUtil: CloudUtil = CloudUtil,
+) {
 
-    val config: ConfigDocument = ConfigDocument(messagesFile).let { it.loadConfig(); it }
+    val config: ConfigDocument = ConfigDocument(messagesFile).also { it.loadConfig() }
     val format: String
 
     init {
@@ -58,41 +60,30 @@ class DefaultBroadcastFeature(messagesFile: File, val cloudUtil: CloudUtil = Clo
             "§8=====================================================\n\n §c§lBROADCAST §7➜ %message% \n\n§8====================================================="
         )
         config.getLong("delay", 5)
-        config.getDocument("messages", document().let { doc ->
-            doc.append("broadcast.1", document().let { first ->
-                first.append("english", "Join our §3Discord: https://discord.gg/J5FX39UGjP")
-                first.append("german", "Besuche unseren §3Discord: https://discord.gg/J5FX39UGjP")
-            })
-            doc.append("broadcast.2", document().let { first ->
-                first.append("english", "SourceCode of our Network: §ehttps://github.com/VironLab")
-                first.append("german", "Quellcode des Netzwerks: §ehttps://github.com/VironLab")
-            })
-        })
+        config.get(
+            "messages",
+            object : TypeToken<MutableList<String>>() {}.type,
+            mutableListOf(
+                "Join our §3Discord: https://discord.gg/J5FX39UGjP",
+                "SourceCode of our Network: §ehttps://github.com/VironLab"
+            )
+        )
         config.saveConfig()
-        config.getDocument("messages")!!.let {messages ->
-            messages.forEach { msg ->
-                val data = messages.getDocument(msg)!!
-                data.forEach {
-                    languageProvider.getLanguage(it)?.saveMessage(msg, data.getString(it)!!) ?: throw IllegalStateException("Language ${it} is not registered")
-                }
-            }
-        }
         this.format = config.getString("format")!!
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
             {
                 val currentBroadcast =
-                    config.getDocument("messages")!!.getKeys().random()
+                    config.get<MutableList<String>>("messages", object : TypeToken<MutableList<String>>() {}.type)!!
+                        .random()
                 CloudAPI.instance.getCloudPlayerManager().getAllOnlinePlayers().getBlocking().forEach { player ->
-                    player.getCloudPlayer().getBlocking().let {
-                        it.sendMessage(
-                            this.format.replace(
-                                "%message%",
-                                languageProvider.getLanguage(it).getMessage(currentBroadcast)
-                            )
+                    player.getCloudPlayer().getBlocking().sendMessage(
+                        this.format.replace(
+                            "%message%",
+                            currentBroadcast
                         )
-                    }
+                    )
                 }
-            }, 0, config.getLong("delay")!!, TimeUnit.MINUTES
+            }, config.getLong("delay")!!, config.getLong("delay")!!, TimeUnit.MINUTES
         )
     }
 

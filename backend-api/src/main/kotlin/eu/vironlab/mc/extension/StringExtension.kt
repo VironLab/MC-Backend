@@ -35,43 +35,21 @@
  *<p>
  */
 
-package eu.vironlab.mc.language
+package eu.vironlab.mc.extension
 
-import eu.thesimplecloud.api.player.IOfflineCloudPlayer
-import java.util.*
+import eu.vironlab.vextension.document.Document
+import java.util.concurrent.atomic.AtomicReference
 
-interface LanguageProvider {
-
-    /**
-     * Register a new Language
-     *
-     * @param language is the new Language to register
-     * @return if the registration was successful
-     */
-    fun registerLanguage(language: Language): Boolean
-
-    /**
-     * Get all Languages are registered
-     *
-     * @return all Languages as Map with the Name as their Key
-     */
-    val languages: Map<String, Language>
-
-    /**
-     * Get an already registered Language
-     *
-     * @param name is the Name of the Language
-     * @return the Language if exists otherwise return null
-     */
-    fun getLanguage(name: String): Language?
-
-    /**
-     * Get the Language by the de.dytanic.cloudnet.ext.bridge.player.ICloudOfflinePlayer
-     *
-     * @param player is the Player whos language you want to have
-     * @return the Language if the player has an specific Language otherwise return the default language
-     */
-    fun getLanguage(player: IOfflineCloudPlayer): Language
-
-
+fun String.replace(doc: Document): String {
+    val rs = AtomicReference<String>(this)
+    if (!doc.isEmpty()) {
+        val l: MutableList<String> = mutableListOf()
+        l.forEach {}
+        doc.forEach {
+            rs.set(
+                rs.get()!!.replace("%$it%", doc.getString(it)!!)
+            )
+        }
+    }
+    return rs.get()
 }

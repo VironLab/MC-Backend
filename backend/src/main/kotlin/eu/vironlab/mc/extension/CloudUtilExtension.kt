@@ -39,12 +39,11 @@ package eu.vironlab.mc.extension
 
 import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.VextensionDownloader
-import eu.vironlab.mc.feature.economy.DefaultEconomyFeature
-import eu.vironlab.mc.language.DefaultLanguage
-import eu.vironlab.mc.language.DefaultLanguageProvider
+import eu.vironlab.mc.feature.DefaultFeatureRegistry
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.database.factory.createDatabaseClient
 import eu.vironlab.vextension.database.mongo.MongoDatabaseClient
+import eu.vironlab.vextension.document.documentFromJson
 import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import java.io.File
 import java.net.URI
@@ -76,20 +75,7 @@ fun CloudUtil.initOnService() {
                     .getBlocking()
                     .getValue().connectionData()
         }
-        this.languageProvider = DefaultLanguageProvider().let { langProvider ->
-            val langs =
-                CloudAPI.instance.getGlobalPropertyHolder().requestProperty<MutableList<String>>("languages")
-                    .getBlocking()
-                    .getValue()
-            langs.forEach { lang ->
-                langProvider.registerLanguage(DefaultLanguage(lang, this.dbClient, this.prefix))
-            }
-            langProvider
-        }
-        this.economyProvider = DefaultEconomyFeature(
-            CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("coinsPropertyName").getBlocking()
-                .getValue()
-        )
+        this.featureRegistry = DefaultFeatureRegistry()
     } catch (e: Exception) {
         e.printStackTrace()
     }

@@ -139,6 +139,7 @@ internal object VextensionDownloader {
             addVironLabSnapshot()
         }
         dependencyLoader.download("com.google.inject:guice:5.0.1")
+        dependencyLoader.download("joda-time:joda-time:2.9.9")
         DocumentInit.downloadDocumentDependencies(dependencyLoader)
     }
 

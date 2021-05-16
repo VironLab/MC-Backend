@@ -35,49 +35,18 @@
  *<p>
  */
 
-package eu.vironlab.mc.language
+package eu.vironlab.mc.feature.punishment
 
-import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+import eu.thesimplecloud.api.eventapi.CloudEventHandler
+import eu.thesimplecloud.api.eventapi.IListener
+import org.bukkit.event.player.PlayerLoginEvent
 
-class DefaultLanguageProvider() : LanguageProvider {
 
-    override val languages: MutableMap<String, Language> = mutableMapOf()
-    private val PROPERTY_NAME = "language"
+class PunishmentListener : IListener{
 
-    override fun registerLanguage(language: Language): Boolean {
-        return if (this.languages.containsKey(language.name)) {
-            false
-        } else {
-            this.languages.put(language.name, language)
-            true
-        }
+    @CloudEventHandler
+    fun handleJoin(event: PlayerLoginEvent) {
+
     }
 
-
-    override fun getLanguage(name: String): Language? {
-        return this.languages.get(name)
-    }
-
-    override fun getLanguage(player: IOfflineCloudPlayer): Language {
-        val language = getLanguage(player.getProperty<String>(PROPERTY_NAME)?.getValue() ?: run {
-            if (languages.isEmpty()) {
-                throw IllegalStateException("There are no Languages")
-            }
-            player.setProperty(
-                PROPERTY_NAME, if (this.languages.keys.contains("english")) {
-                    "english"
-                } else {
-                    this.languages.keys.first()
-                }
-            )
-            player.update()
-            player.getProperty<String>(PROPERTY_NAME)!!.getValue()
-        })
-            ?: throw IllegalStateException(
-                "The Language ${
-                    player.getProperty<String>(PROPERTY_NAME)!!.getValue()
-                } does not exists"
-            )
-        return language
-    }
 }

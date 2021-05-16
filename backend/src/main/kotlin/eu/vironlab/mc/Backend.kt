@@ -39,13 +39,11 @@ package eu.vironlab.mc
 
 import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.external.ICloudModule
-import eu.vironlab.mc.feature.economy.DefaultEconomyFeature
+import eu.vironlab.mc.config.BackendMessageConfiguration
 import eu.vironlab.mc.extension.connectionData
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
 import eu.vironlab.mc.feature.broadcast.DefaultBroadcastFeature
 import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
-import eu.vironlab.mc.language.DefaultLanguage
-import eu.vironlab.mc.language.DefaultLanguageProvider
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.collection.DataPair
 import eu.vironlab.vextension.database.DatabaseClient
@@ -61,6 +59,13 @@ import java.nio.file.Files
 class Backend : ICloudModule {
 
     lateinit var dataFolder: File
+    lateinit var config: ConfigDocument
+    lateinit var messages: BackendMessageConfiguration
+
+    companion object {
+        @JvmStatic
+        lateinit var instance: Backend
+    }
 
     override fun onDisable() {
     }
@@ -70,6 +75,7 @@ class Backend : ICloudModule {
     }
 
     override fun onEnable() {
+        instance = this
         try {
             VextensionDownloader.loadVextension(File(".libs").let {
                 if (!it.exists()) {
@@ -93,20 +99,11 @@ class Backend : ICloudModule {
                 db.first,
                 config.getString("prefix")!!,
                 dataFolder.toPath(),
-                DefaultLanguageProvider().let {
-                    it.registerLanguage(DefaultLanguage("english", db.first, config.getString("prefix")!!))
-                    it.registerLanguage(DefaultLanguage("german", db.first, config.getString("prefix")!!))
-                    it
-                },
                 DefaultFeatureRegistry()
             )
             CloudAPI.instance.getGlobalPropertyHolder().let {
                 it.setProperty<String>("dataFolder", dataFolder.toPath().toUri().toString())
                 it.setProperty<String>("prefix", CloudUtil.prefix)
-                it.setProperty<MutableList<String>>(
-                    "languages",
-                    CloudUtil.languageProvider.languages.keys.toMutableList()
-                )
                 it.setProperty<String>("coinsPropertyName", "coins")
                 it.setProperty<ConfigDocument>("dbConnection", db.second)
             }
@@ -117,28 +114,27 @@ class Backend : ICloudModule {
     }
 
     fun startFeatures(cfg: Document) {
-        val featureDir = File(dataFolder, "features").let {
-            if (!it.exists()) {
-                Files.createDirectories(it.toPath())
-            }
-            it
-        }
         cfg.getKeys().forEach {
-            val cfgDir = File(featureDir, it)
+            val cfgDir = File(dataFolder, it)
             if (!cfgDir.exists()) {
                 Files.createDirectories(cfgDir.toPath())
             }
         }
         if (cfg.getBoolean("broadcast")!!) {
-            DefaultBroadcastFeature(File(dataFolder, "feature/broadcast/autobroadcast.json"))
+            DefaultBroadcastFeature(File(dataFolder, "/broadcast/autobroadcast.json"))
         }
         if (cfg.getBoolean("punishment")!!) {
-            DefaultPunishmentFeature(CloudUtil, File(featureDir, "punishment/"))
+            DefaultPunishmentFeature(CloudUtil, File(dataFolder, "punishment/"), this)
         }
     }
 
     fun initConfig(): ConfigDocument {
-        val config = ConfigDocument(File(dataFolder, "config.json"))
+        val msgConfig = ConfigDocument(File(dataFolder, "messages.json")).also {
+            it.loadConfig()
+        }
+        this.messages = msgConfig.get("messages", BackendMessageConfiguration::class.java, BackendMessageConfiguration())
+        msgConfig.saveConfig()
+        this.config = ConfigDocument(File(dataFolder, "config.json"))
         config.loadConfig()
 
         //Features

@@ -37,92 +37,155 @@
 
 package eu.vironlab.mc.feature.punishment
 
+import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+import eu.thesimplecloud.launcher.startup.Launcher
+import eu.thesimplecloud.module.permission.PermissionPool
+import eu.vironlab.mc.Backend
+import eu.vironlab.mc.extension.online
+import eu.vironlab.mc.extension.replace
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.database.Database
 import eu.vironlab.vextension.document.document
 import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import eu.vironlab.vextension.extension.random
-import org.joda.time.Period
-import org.joda.time.format.PeriodFormatterBuilder
 import java.io.File
 import java.util.concurrent.TimeUnit
+import org.joda.time.Period
+import org.joda.time.format.PeriodFormatter
+import org.joda.time.format.PeriodFormatterBuilder
 
-class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : PunishmentFeature {
+class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File, val backend: Backend) : PunishmentFeature {
 
-    val config: ConfigDocument = ConfigDocument(File(configDir, "config.json"))
-    val reasonConfig: ConfigDocument = ConfigDocument(File(configDir, "reasons.json"))
-    val reasons: MutableMap<Int, PunishReason> = mutableMapOf()
+    val messages: PunishmentMessageConfig
+    val reasonConfig: ConfigDocument = ConfigDocument(File(configDir, "reasons.json")).let {
+        it.getDocument("reasons", document())
+        it
+    }
+    override val reasons: MutableMap<Int, PunishReason> = mutableMapOf()
     val punishmentDatabase: Database = cloudUtil.dbClient.getDatabase("punish_punishments").complete()
-    val kickHeader: String
-    val kickFooter: String
-    val permaMutePoints: Int
-    val permaBanPoints: Int
+    val periodFormatter: PeriodFormatter
 
     init {
-        config.loadConfig()
         reasonConfig.loadConfig()
-        this.permaMutePoints = config.getInt("permaMutePoints", 20)
-        this.permaBanPoints = config.getInt("permaBanPoints", 20)
-        this.kickHeader = config.getString(
-            "kickHeader",
-            "\n§8§m━━━━━━━━━━━━━━━━━━━━§8[§2§lViron§a§lLab§8]§m━━━━━━━━━━━━━━━━━━━━ \n\n"
-        )
-        this.kickFooter =
-            config.getString("kickFooter", "\n\n§8§m━━━━━━━━━━━━━━━━━━━━§8[§2§lViron§a§lLab§8]§m━━━━━━━━━━━━━━━━━━━━")
         initReasons()
+        this.messages = ConfigDocument(File(configDir, "messages.json")).let { cfg ->
+            cfg.loadConfig(); cfg.get(
+            "messages",
+            PunishmentMessageConfig::class.java,
+            PunishmentMessageConfig()
+        ).also { cfg.saveConfig() }
+        }
+        this.periodFormatter = PeriodFormatterBuilder()
+            .appendYears().appendSuffix(" ${messages.times.year}, ", " ${messages.times.years}, ")
+            .appendMonths().appendSuffix(" ${messages.times.month}, ", " ${messages.times.months}, ")
+            .appendWeeks().appendSuffix(" ${messages.times.week}, ", " ${messages.times.weeks}, ")
+            .appendDays().appendSuffix(" ${messages.times.day}, ", " ${messages.times.days}, ")
+            .appendHours().appendSuffix(" ${messages.times.hour}, ", " ${messages.times.hours}, ")
+            .appendMinutes().appendSuffix(" ${messages.times.minute}, ", " ${messages.times.minutes}, ")
+            .appendSeconds().appendSuffix(" ${messages.times.second}", " ${messages.times.seconds}")
+            .printZeroNever()
+            .toFormatter()
+        Launcher.instance.commandManager.registerCommand(backend, PunishmentCommand(this, messages))
+        CloudAPI.instance.getEventManager().registerListener(backend, PunishmentListener())
     }
 
     override fun getKickMessage(reason: String, player: IOfflineCloudPlayer): String =
-        this.kickHeader + cloudUtil.languageProvider.getLanguage(player)
-            .replace("punish.kick", document("reason", reason)) + this.kickFooter
+        this.messages.kickHeader + this.messages.kickMessage.replace(
+            document(
+                "reason",
+                reason
+            )
+        ) + this.messages.kickFooter
 
 
-    override fun getBanMessage(reason: String, expiration: Long, player: IOfflineCloudPlayer): String =
-        this.kickHeader + cloudUtil.languageProvider.getLanguage(player).replace(
-            "punish.ban",
-            document("reason", reason).append("timeout", dischargeString(expiration, player))
-        ) + this.kickFooter
+    override fun getBanMessage(punishment: Punishment, player: IOfflineCloudPlayer): String =
+        this.messages.kickHeader + this.messages.banMessage.replace(
+            document("reason", punishment.reason).append("timeout", dischargeString(punishment.expirationTime, player))
+                .append("id", punishment.id)
+        ) + this.messages.kickFooter
 
-    override fun getMuteMessage(reason: String, expiration: Long, player: IOfflineCloudPlayer): String =
-        cloudUtil.languageProvider.getLanguage(player).replace(
-            "punish.mute",
-            document("reason", reason).append("timeout", dischargeString(expiration, player))
+    override fun getMuteMessage(punishment: Punishment, player: IOfflineCloudPlayer): String =
+        this.messages.muteMessage.replace(
+            document("reason", punishment.reason).append("timeout", dischargeString(punishment.expirationTime, player))
+                .append("id", punishment.id)
         )
 
-    private fun dischargeString(timeout: Long, player: IOfflineCloudPlayer): String
-        = PeriodFormatterBuilder()
-            .appendYears().appendSuffix(" year, ", " years, ")
-            .appendMonths().appendSuffix(" month, ", " months, ")
-            .appendWeeks().appendSuffix(" week, ", " weeks, ")
-            .appendDays().appendSuffix(" day, ", " days, ")
-            .appendHours().appendSuffix(" hour, ", " hours, ")
-            .appendMinutes().appendSuffix(" minute, ", " minutes, ")
-            .appendSeconds().appendSuffix(" second", " seconds")
-            .printZeroNever()
-            .toFormatter().print(Period(timeout, System.currentTimeMillis()))
+    fun dischargeString(timeout: Long, player: IOfflineCloudPlayer): String =
+        this.periodFormatter.print(Period(System.currentTimeMillis(), timeout))
 
 
     override fun getReason(id: Int): PunishReason? = this.reasons[id]
 
     override fun getPunishments(player: IOfflineCloudPlayer): Collection<Punishment> =
-        punishmentDatabase.get(player.getUniqueId().toString()).complete()?.toInstance(Punishment.COLLECTION_TYPE)
+        punishmentDatabase.get(player.getUniqueId().toString()).complete()?.getDocument("punishments")
+            ?.toInstance(Punishment.COLLECTION_TYPE)
             ?: mutableListOf()
 
     override fun addPunishment(reasonID: Int, executor: String, player: IOfflineCloudPlayer): String {
         val reason = getReason(reasonID) ?: throw IllegalStateException("Invalid Reason ID!")
+        if (reason.ignorePermission != null) {
+            if (PermissionPool.instance.getPermissionPlayerManager().getPermissionPlayer(player.getUniqueId())
+                    .getBlocking().hasPermission(reason.ignorePermission!!)
+            ) {
+                return "NOT PUNISHED -> IGNORE PERMISSION GIVEN"
+            }
+        }
         val punishments = getPunishments(player).toMutableList()
         val punishmentsOfTypeCount = punishments.count { it.reason == reason.name }
         var id = String.random(6)
         while (punishments.any { it.id == id }) id = String.random(6)
         val duration = reason.durations.getOrNull(punishmentsOfTypeCount) ?: reason.durations.last()
-        punishments.add(Punishment(id, true, executor, reason.name, duration.type, System.currentTimeMillis(), System.currentTimeMillis() + duration.unit.toMillis(duration.length)))
-        punishmentDatabase.update(player.getUniqueId().toString(), document(punishments))
+        val punishment = Punishment(
+            id,
+            true,
+            executor,
+            reason.name,
+            duration.type,
+            System.currentTimeMillis(),
+            System.currentTimeMillis() + duration.unit.toMillis(duration.length)
+        )
+        punishments.add(
+            punishment
+        )
+        if (!punishmentDatabase.update(player.getUniqueId().toString(), document("punishments", punishments))
+                .complete()
+        ) {
+            punishmentDatabase.insert(player.getUniqueId().toString(), document("punishments", punishments)).complete()
+        }
+        when (duration.type) {
+            PunishType.BAN, PunishType.PERMA_BAN -> player.online()?.kick(getBanMessage(punishment, player))
+            PunishType.MUTE, PunishType.PERMA_MUTE -> player.online()?.sendMessage(getMuteMessage(punishment, player))
+            PunishType.WARN -> player.online()?.kick(getKickMessage(punishment.reason, player))
+        }
+
         return id
     }
 
-    private fun initReasons() { // TODO "ADD DEFAULT REASONS"
-        this.reasonConfig.getDocument("reasons", document()).getKeys().forEach {
+    private fun initReasons() {
+        this.reasonConfig.getDocument(
+            "reasons",
+            document().append(
+                "1",
+                document("name", "Hacking").append(
+                    "durations",
+                    document(
+                        "1",
+                        document("length", 30L).append("unit", TimeUnit.DAYS.toString())
+                            .append("type", PunishType.BAN.toString())
+                    )
+                )
+            ).append(
+                "2", document("name", "Provocation").append(
+                    "durations", document(
+                        "1",
+                        document("length", 1L).append("unit", TimeUnit.DAYS.toString())
+                            .append("type", PunishType.MUTE.toString())
+                    )
+                ).append("ignorePermission", "backend.punish.provocation.ignore")
+                    .append("permission", "backend.punish.provocation")
+            )
+        ).getKeys().forEach {
             val id: Int = it.toIntOrNull() ?: throw IllegalStateException("Id have to be an number")
             val data = reasonConfig.getDocument("reasons")!!.getDocument(it)!!
             val name = data.getString("name") ?: throw IllegalStateException("Name is missing on Reason: $id")
@@ -139,8 +202,10 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : Puni
                     )
                 }
             } ?: throw IllegalStateException("Duration is missing on Reason: $id")
-            reasons[id] = PunishReason(id, name, durations)
+            reasons[id] =
+                PunishReason(id, name, durations, data.getString("ignorePermission"), data.getString("permission"))
         }
+        this.reasonConfig.saveConfig()
     }
 
 }
