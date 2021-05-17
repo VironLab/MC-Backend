@@ -78,7 +78,7 @@ class BukkitLoader : JavaPlugin() {
             getCommand("menu")!!.setExecutor(menuListener)
             Bukkit.getPluginManager().registerEvents(menuListener, this)
         }
-        if (cfg.gamemodeCommand) {
+        if (cfg.gamemode) {
             getCommand("gamemode")!!.setExecutor(
                 GamemodeCommand(
                     CloudAPI.instance.getGlobalPropertyHolder()

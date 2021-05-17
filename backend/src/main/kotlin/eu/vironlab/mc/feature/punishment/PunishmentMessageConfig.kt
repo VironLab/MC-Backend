@@ -29,6 +29,7 @@ class PunishmentMessageConfig {
     val infoTemplate = "§2%id% §8- §a%reason% §8- §a%type% §8- §a%active%"
     val punishmentInactive = "The Id §2%id% §7is already inactive"
     val noUnpunishReason = "You have to give a reason for unpunish that Player"
+    val permanent = "Permanent"
     val times: Times = Times()
 
     class Times {

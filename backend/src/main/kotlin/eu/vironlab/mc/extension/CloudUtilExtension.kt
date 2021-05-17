@@ -42,6 +42,8 @@ import eu.vironlab.mc.feature.DefaultFeatureRegistry
 import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
 import eu.vironlab.mc.feature.punishment.PunishmentFeature
 import eu.vironlab.mc.util.CloudUtil
+import eu.vironlab.mc.util.EventUtil
+import eu.vironlab.mc.util.ServiceGlobalEventProvider
 import eu.vironlab.vextension.database.factory.createDatabaseClient
 import eu.vironlab.vextension.database.mongo.MongoDatabaseClient
 import eu.vironlab.vextension.document.documentFromJson
@@ -51,6 +53,7 @@ import java.nio.file.Paths
 
 fun CloudUtil.initOnService() {
     try {
+        EventUtil.instance = ServiceGlobalEventProvider()
         this.dataFolder =
             Paths.get(
                 URI(

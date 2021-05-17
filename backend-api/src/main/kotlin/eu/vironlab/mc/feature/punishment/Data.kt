@@ -41,8 +41,8 @@ import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 import java.util.concurrent.TimeUnit
 
-enum class PunishType {
-    WARN, MUTE, BAN, PERMA_BAN, PERMA_MUTE;
+enum class PunishType(val permanent: Boolean) {
+    WARN(false), MUTE(false), BAN(false), PERMA_BAN(true), PERMA_MUTE(true);
 }
 
 data class Punishment(

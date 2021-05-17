@@ -40,5 +40,5 @@ package eu.vironlab.mc.bukkit
 
 class BukkitConfiguration {
     val playermenu: Boolean = true
-    val gamemodeCommand: Boolean = true
+    val gamemode: Boolean = true
 }

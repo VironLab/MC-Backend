@@ -54,6 +54,8 @@ import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
 import eu.vironlab.mc.feature.punishment.PunishmentCommand
 import eu.vironlab.mc.feature.punishment.UnpunishCommand
 import eu.vironlab.mc.util.CloudUtil
+import eu.vironlab.mc.util.EventUtil
+import eu.vironlab.mc.util.ManagerGlobalEventProvider
 import eu.vironlab.vextension.collection.DataPair
 import eu.vironlab.vextension.database.DatabaseClient
 import eu.vironlab.vextension.database.factory.createDatabaseClient
@@ -112,6 +114,7 @@ class Backend : ICloudModule {
             )
             startFeatures(config.getDocument("features")!!)
             initBukkit(config.get("features", BukkitConfiguration::class.java)!!)
+            EventUtil.instance = ManagerGlobalEventProvider()
             CloudAPI.instance.getGlobalPropertyHolder().let {
                 it.setProperty<String>("dataFolder", dataFolder.toPath().toUri().toString())
                 it.setProperty<String>("prefix", CloudUtil.prefix)
@@ -151,7 +154,7 @@ class Backend : ICloudModule {
         if (cfg.playermenu) {
             PlayerMenuManagerInitializer(this)
         }
-        if (cfg.gamemodeCommand) {
+        if (cfg.gamemode) {
             GameModeManagerInitializer(this)
         }
         CloudAPI.instance.getGlobalPropertyHolder().setProperty("bukkitConfig", cfg)
@@ -172,10 +175,14 @@ class Backend : ICloudModule {
         features.getBoolean("broadcast", true)
         features.getBoolean("punishment", true)
         features.getBoolean("economy", true)
+        val default = BukkitConfiguration()
+        BukkitConfiguration::class.java.declaredFields.filter { it.type == Boolean::class.java }.forEach { field ->
+            field.isAccessible = true
+            features.getBoolean(field.name, field.getBoolean(default))
+        }
 
         config.let {
             it.getString("prefix", "§2§lViron§a§lLab §8| §7")
-            it.get("features", BukkitConfiguration::class.java, BukkitConfiguration())
             it.getDocument("features", features)
         }
         config.saveConfig()

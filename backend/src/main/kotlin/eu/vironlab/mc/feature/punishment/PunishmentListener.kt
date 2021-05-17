@@ -104,7 +104,7 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
         }
         if (validPunishments.isNotEmpty())
             validPunishments[0].let {
-                if (it.expirationTime > System.currentTimeMillis())
+                if (it.expirationTime > System.currentTimeMillis() || it.type.permanent)
                     return it
             }
         return null

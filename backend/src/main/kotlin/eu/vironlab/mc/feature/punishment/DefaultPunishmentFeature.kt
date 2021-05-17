@@ -119,8 +119,11 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : Puni
                 .append("id", punishment.id)
         )
 
-    fun dischargeString(timeout: Long): String =
+    fun dischargeString(timeout: Long): String = if (timeout == 0L) {
+        messages.permanent
+    } else {
         this.periodFormatter.print(Period(System.currentTimeMillis(), timeout))
+    }
 
 
     override fun getReason(id: Int): PunishReason? = this.reasons[id]
@@ -153,7 +156,8 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : Puni
             reason.name,
             duration.type,
             System.currentTimeMillis(),
-            System.currentTimeMillis() + duration.unit.toMillis(duration.length)
+            if (!duration.type.permanent) System.currentTimeMillis() + duration.unit.toMillis(duration.length)
+            else 0L
         )
         punishments.add(
             punishment

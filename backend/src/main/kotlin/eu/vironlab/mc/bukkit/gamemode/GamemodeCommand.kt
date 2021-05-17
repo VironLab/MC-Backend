@@ -58,5 +58,6 @@ class GamemodeCommand(val messages: GameModeMessageConfiguration) : CommandExecu
 
             }
         }
+        return true
     }
 }
