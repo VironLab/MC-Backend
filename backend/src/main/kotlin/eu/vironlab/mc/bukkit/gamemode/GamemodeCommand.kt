@@ -50,12 +50,12 @@ import org.bukkit.command.CommandSender
 class GamemodeCommand(val messages: GameModeMessageConfiguration, val backendMessages: BackendMessageConfiguration) :
     CommandExecutor {
 
-    val usage = messages.usageTemplate.replace("%usage%", "")
+    val usage = messages.usageTemplate.replace("%usage%", "/gamemode <player> <gamemode>")
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (!sender.hasPermission("backend.cmd.gamemode")) {
             sender.sendMessage(messages.noAllowed)
-            return false
+            return true
         }
         val target = if (args.size == 2) {
             if (!sender.hasPermission("backend.cmd.gamemode.other")) {

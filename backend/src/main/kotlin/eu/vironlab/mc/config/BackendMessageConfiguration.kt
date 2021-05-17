@@ -42,5 +42,5 @@ class BackendMessageConfiguration {
 
     val interferedType = "Interfered type is %given% but %requested% is needed"
     val playerNotExist = "The Player §2%name% §7was not found"
-
+    val permissionMissing = "You don't have the Permission: §2%permission%"
 }
