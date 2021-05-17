@@ -37,12 +37,24 @@
 
 package eu.vironlab.mc.bukkit.menu.manager
 
+import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.Backend
+import eu.vironlab.mc.bukkit.menu.PlayerMenuMessageConfiguration
+import eu.vironlab.vextension.document.wrapper.ConfigDocument
+import java.io.File
 
 
 class PlayerMenuManagerInitializer(val backend: Backend) {
 
     init {
+        CloudAPI.instance.getGlobalPropertyHolder().setProperty<PlayerMenuMessageConfiguration>(
+            "playerMenuMessages",
+            ConfigDocument(File(backend.dataFolder, "playermenu/messages.json")).let {
+                it.loadConfig()
+                it.get("messages", PlayerMenuMessageConfiguration::class.java, PlayerMenuMessageConfiguration())
+                    .also { msg -> it.saveConfig() }
+            }
+        )
     }
 
 }

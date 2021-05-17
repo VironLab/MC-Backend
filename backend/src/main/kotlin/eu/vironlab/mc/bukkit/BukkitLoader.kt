@@ -46,23 +46,15 @@ import eu.vironlab.mc.bukkit.menu.PlayerMenuListenerCommand
 import eu.vironlab.mc.config.BackendMessageConfiguration
 import eu.vironlab.mc.extension.initOnService
 import eu.vironlab.mc.util.CloudUtil
+import eu.vironlab.vextension.bukkit.VextensionBukkit
 import eu.vironlab.vextension.item.bukkit.BukkitItemEventConsumer
 import java.io.File
 import java.net.URI
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
-import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 
 class BukkitLoader : JavaPlugin() {
-
-    companion object {
-        @JvmStatic
-        lateinit var instance: BukkitLoader
-
-        @JvmStatic
-        lateinit var key: NamespacedKey
-    }
 
     lateinit var cloudUtil: CloudUtil
     lateinit var cfg: BukkitConfiguration
@@ -93,9 +85,6 @@ class BukkitLoader : JavaPlugin() {
         }
     }
 
-    val items: MutableMap<String, ItemStack> = mutableMapOf()
-
-
     override fun onLoad() {
         VextensionDownloader.loadVextensionBukkit(
             File(
@@ -106,8 +95,8 @@ class BukkitLoader : JavaPlugin() {
                 )
             )
         )
-        instance = this
-        key = NamespacedKey(instance, "backend")
+        VextensionBukkit.instance = this
+        VextensionBukkit.key = NamespacedKey(this, "backend")
     }
 
 

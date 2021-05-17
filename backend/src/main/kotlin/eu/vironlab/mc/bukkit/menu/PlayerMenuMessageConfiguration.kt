@@ -38,5 +38,29 @@
 package eu.vironlab.mc.bukkit.menu
 
 
-class PlayerMenuConfiguration {
+class PlayerMenuMessageConfiguration {
+
+    val mainMenu: MainMenu = MainMenu()
+
+    class MainMenu {
+        val title = "§2Playermenu"
+        val team = "§cTeam"
+        val teamLore: MutableList<String> = mutableListOf(
+            "§7________________________",
+            "§8 ",
+            "§2Access the Team area",
+            "§8 ",
+            "§7________________________"
+        )
+        val profile = "§2Profile"
+        val profileLore: MutableList<String> = mutableListOf(
+            "§7________________________",
+            "§8 ",
+            "§2Access your Profile",
+            "§8 ",
+            "§7________________________"
+        )
+
+    }
+
 }
