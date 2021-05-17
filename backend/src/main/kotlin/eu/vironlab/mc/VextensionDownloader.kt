@@ -97,7 +97,6 @@ package eu.vironlab.mc
 
 import eu.vironlab.vextension.dependency.DependencyLoader
 import eu.vironlab.vextension.dependency.factory.createDependencyLoader
-import eu.vironlab.vextension.document.DocumentFactory
 import eu.vironlab.vextension.document.DocumentInit
 import java.io.File
 import java.lang.reflect.InvocationTargetException
@@ -114,6 +113,41 @@ internal object VextensionDownloader {
             "https://ci.vironlab.eu/job/Vextension/lastSuccessfulBuild/artifact/vextension-common/build/libs/vextension-common.jar"
         val filePath = "vextension/"
         val fileName = "vextension-common.jar"
+        val folder = File(path, filePath)
+        val dest = File(folder, fileName)
+        try {
+            if (!dest.exists()) {
+                println("Downloading library $fileName !")
+                dest.parentFile.mkdirs()
+                val requestURL = URL(urlStr)
+                Files.copy(requestURL.openStream(), dest.toPath())
+            }
+            try {
+                DependencyClassLoader().addJarToClasspath(dest)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                return
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return
+        }
+        val dependencyLoader: DependencyLoader = createDependencyLoader(path) {
+            addJCenter()
+            addMavenCentral()
+            addVironLabSnapshot()
+        }
+        dependencyLoader.download("com.google.inject:guice:5.0.1")
+        dependencyLoader.download("joda-time:joda-time:2.9.9")
+        DocumentInit.downloadDocumentDependencies(dependencyLoader)
+    }
+
+    @JvmStatic
+    fun loadVextensionBukkit(path: File) {
+        val urlStr =
+            "https://ci.vironlab.eu/job/Vextension/lastSuccessfulBuild/artifact/vextension-common/build/libs/vextension-minecraft-server.jar"
+        val filePath = "vextension/"
+        val fileName = "vextension-minecraft-server.jar"
         val folder = File(path, filePath)
         val dest = File(folder, fileName)
         try {

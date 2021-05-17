@@ -47,6 +47,8 @@ import eu.thesimplecloud.launcher.console.command.annotations.CommandArgument
 import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
 import eu.thesimplecloud.launcher.console.command.provider.ICommandSuggestionProvider
 import eu.vironlab.mc.Backend
+import eu.vironlab.vextension.extension.toCleanString
+import java.util.*
 
 @Command("unpunish", CommandType.INGAME, "backend.cmd.unpunish", aliases = ["unban", "unmute", "pardon"])
 class UnpunishCommand(val punishFeature: PunishmentFeature, val messageConfig: PunishmentMessageConfig) :
@@ -59,12 +61,23 @@ class UnpunishCommand(val punishFeature: PunishmentFeature, val messageConfig: P
     @CommandSubPath("<player> <id>")
     fun unpunish(
         sender: ICommandSender,
+        argsRaw: Array<String>,
         @CommandArgument("player") playerStr: String,
         @CommandArgument("id", UnpunishListIds::class) id: String
     ) {
+        val args = Arrays.copyOfRange(argsRaw, 2, argsRaw.size)
+        if (args.isEmpty()) {
+            sender.sendMessage(messageConfig.prefix + messageConfig.noUnpunishReason)
+            return
+        }
         val player =
             CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(playerStr).getBlockingOrNull() ?: run {
-                sender.sendMessage(messageConfig.prefix + Backend.instance.messages.playerNotExist.replace("%name%", playerStr)) // INVALID PLAYER
+                sender.sendMessage(
+                    messageConfig.prefix + Backend.instance.messages.playerNotExist.replace(
+                        "%name%",
+                        playerStr
+                    )
+                ) // INVALID PLAYER
                 return
             }
         val punishments = punishFeature.getPunishments(player.getUniqueId()).punishments.toMutableList()
@@ -77,14 +90,19 @@ class UnpunishCommand(val punishFeature: PunishmentFeature, val messageConfig: P
             return
         }
         punishment.active = false
-        punishment.unPunishExecutor = (sender as ICloudPlayer).getUniqueId().toString()
+        punishment.unPunishReason = args.toCleanString()
+        punishment.unPunishExecutor = if (sender is ICloudPlayer) sender.getUniqueId().toString() else "System"
         punishFeature.updatePunishments(player.getUniqueId(), PlayerPunishmentData(punishments))
-        sender.sendMessage(messageConfig.prefix + messageConfig.unpunishSuccess.replace("%player%", playerStr).replace("%id%", id))
+        sender.sendMessage(
+            messageConfig.prefix + messageConfig.unpunishSuccess.replace("%player%", playerStr).replace("%id%", id)
+        )
     }
 }
+
 class UnpunishListIds : ICommandSuggestionProvider {
     override fun getSuggestions(sender: ICommandSender, fullCommand: String, lastArgument: String): List<String> {
-        return (CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(fullCommand.split(" ")[1]).getBlockingOrNull() ?: run { return mutableListOf() }).let {
+        return (CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(fullCommand.split(" ")[1])
+            .getBlockingOrNull() ?: run { return mutableListOf() }).let {
             punishFeature.getPunishments(it.getUniqueId()).punishments.map { punishment -> punishment.id }
         }
     }

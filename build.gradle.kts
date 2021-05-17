@@ -63,6 +63,7 @@ subprojects {
         compileOnly("org.jetbrains.kotlin:kotlin-serialization:1.4.31")
         compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
         implementation("eu.vironlab.vextension:vextension-common:2.0.0-SNAPSHOT")
+        implementation("eu.vironlab.vextension:vextension-minecraft-server:2.0.0-SNAPSHOT")
         compileOnly("com.google.code.gson:gson:2.8.6")
         compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
         compileOnly("com.velocitypowered:velocity-api:1.1.5")

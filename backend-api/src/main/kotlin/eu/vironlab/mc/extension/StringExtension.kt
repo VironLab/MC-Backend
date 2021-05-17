@@ -53,3 +53,24 @@ fun String.replace(doc: Document): String {
     }
     return rs.get()
 }
+
+fun String.replaceColor(): String {
+    return this.replace("&0", "§0")
+        .replace("&1", "§1")
+        .replace("&2", "§3")
+        .replace("&4", "§4")
+        .replace("&5", "§5")
+        .replace("&6", "§6")
+        .replace("&7", "§7")
+        .replace("&8", "§8")
+        .replace("&9", "§9")
+        .replace("&a", "§a")
+        .replace("&b", "§b")
+        .replace("&c", "§c")
+        .replace("&d", "§d")
+        .replace("&e", "§e")
+        .replace("&f", "§f")
+        .replace("&o", "§o")
+        .replace("&m", "§m")
+        .replace("&r", "§r")
+}

@@ -38,16 +38,72 @@
 package eu.vironlab.mc.bukkit
 
 import eu.thesimplecloud.api.CloudAPI
+import eu.vironlab.mc.VextensionDownloader
+import eu.vironlab.mc.bukkit.gamemode.GameModeMessageConfiguration
+import eu.vironlab.mc.bukkit.gamemode.GamemodeCommand
+import eu.vironlab.mc.bukkit.menu.PlayerMenu
+import eu.vironlab.mc.bukkit.menu.PlayerMenuListenerCommand
 import eu.vironlab.mc.extension.initOnService
 import eu.vironlab.mc.util.CloudUtil
+import eu.vironlab.vextension.item.bukkit.BukkitItemEventConsumer
+import java.io.File
+import java.net.URI
+import org.bukkit.Bukkit
+import org.bukkit.NamespacedKey
+import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 
 class BukkitLoader : JavaPlugin() {
 
+    companion object {
+        @JvmStatic
+        lateinit var instance: BukkitLoader
+
+        @JvmStatic
+        lateinit var key: NamespacedKey
+    }
+
     lateinit var cloudUtil: CloudUtil
+    lateinit var cfg: BukkitConfiguration
 
     override fun onEnable() {
         CloudUtil.initOnService()
+        logger.info("Loaded Vextension by VironLab: https://github.com/VironLab/Vextension")
+        Bukkit.getPluginManager().registerEvents(BukkitItemEventConsumer(), this)
+        this.cfg = CloudAPI.instance.getGlobalPropertyHolder().requestProperty<BukkitConfiguration>("bukkitConfig")
+            .getBlocking().getValue()
+        if (cfg.playermenu) {
+            val menu = PlayerMenu(this)
+            val menuListener = PlayerMenuListenerCommand(menu)
+            getCommand("menu")!!.setExecutor(menuListener)
+            Bukkit.getPluginManager().registerEvents(menuListener, this)
+        }
+        if (cfg.gamemodeCommand) {
+            getCommand("gamemode")!!.setExecutor(
+                GamemodeCommand(
+                    CloudAPI.instance.getGlobalPropertyHolder()
+                        .requestProperty<GameModeMessageConfiguration>("gamemodeConfig").getBlocking().getValue()
+                )
+            )
+        }
     }
+
+    val items: MutableMap<String, ItemStack> = mutableMapOf()
+
+
+    override fun onLoad() {
+        VextensionDownloader.loadVextensionBukkit(
+            File(
+                URI(
+                    CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("vextensionLibDir")
+                        .getBlocking()
+                        .getValue() ?: throw IllegalStateException("Cannot find Module")
+                )
+            )
+        )
+        instance = this
+        key = NamespacedKey(instance, "backend")
+    }
+
 
 }

@@ -40,9 +40,13 @@ package eu.vironlab.mc
 import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.external.ICloudModule
 import eu.thesimplecloud.launcher.startup.Launcher
+import eu.vironlab.mc.bukkit.BukkitConfiguration
+import eu.vironlab.mc.bukkit.gamemode.GameModeManagerInitializer
+import eu.vironlab.mc.bukkit.menu.manager.PlayerMenuManagerInitializer
 import eu.vironlab.mc.config.BackendMessageConfiguration
 import eu.vironlab.mc.extension.connectionData
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
+import eu.vironlab.mc.feature.broadcast.BroadcastCommand
 import eu.vironlab.mc.feature.broadcast.DefaultBroadcastFeature
 import eu.vironlab.mc.feature.economy.DefaultEconomyFeature
 import eu.vironlab.mc.feature.economy.EconomyCommand
@@ -107,6 +111,7 @@ class Backend : ICloudModule {
                 DefaultFeatureRegistry(),
             )
             startFeatures(config.getDocument("features")!!)
+            initBukkit(config.get("features", BukkitConfiguration::class.java)!!)
             CloudAPI.instance.getGlobalPropertyHolder().let {
                 it.setProperty<String>("dataFolder", dataFolder.toPath().toUri().toString())
                 it.setProperty<String>("prefix", CloudUtil.prefix)
@@ -126,7 +131,8 @@ class Backend : ICloudModule {
             }
         }
         if (cfg.getBoolean("broadcast")!!) {
-            DefaultBroadcastFeature(File(dataFolder, "/broadcast/autobroadcast.json"))
+            val broadcast = DefaultBroadcastFeature(File(dataFolder, "/broadcast/autobroadcast.json"))
+            Launcher.instance.commandManager.registerCommand(this, BroadcastCommand(broadcast))
         }
         if (cfg.getBoolean("punishment")!!) {
             val punish = DefaultPunishmentFeature(CloudUtil, File(dataFolder, "punishment/").also {
@@ -139,6 +145,16 @@ class Backend : ICloudModule {
             val eco = DefaultEconomyFeature("coins", File(dataFolder, "economy/"))
             Launcher.instance.commandManager.registerCommand(this, EconomyCommand(eco, eco.messages))
         }
+    }
+
+    fun initBukkit(cfg: BukkitConfiguration) {
+        if (cfg.playermenu) {
+            PlayerMenuManagerInitializer(this)
+        }
+        if (cfg.gamemodeCommand) {
+            GameModeManagerInitializer(this)
+        }
+        CloudAPI.instance.getGlobalPropertyHolder().setProperty("bukkitConfig", cfg)
     }
 
     fun initConfig(): ConfigDocument {
@@ -159,6 +175,7 @@ class Backend : ICloudModule {
 
         config.let {
             it.getString("prefix", "§2§lViron§a§lLab §8| §7")
+            it.get("features", BukkitConfiguration::class.java, BukkitConfiguration())
             it.getDocument("features", features)
         }
         config.saveConfig()

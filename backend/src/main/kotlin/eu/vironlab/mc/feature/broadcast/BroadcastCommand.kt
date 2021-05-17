@@ -35,46 +35,26 @@
  *<p>
  */
 
-package eu.vironlab.mc.velocity
+package eu.vironlab.mc.feature.broadcast
 
-import com.google.inject.Inject
-import com.velocitypowered.api.event.Subscribe
-import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
-import com.velocitypowered.api.proxy.ProxyServer
 import eu.thesimplecloud.api.CloudAPI
-import eu.vironlab.mc.VextensionDownloader
-import eu.vironlab.mc.extension.initOnService
-import eu.vironlab.mc.feature.punishment.PunishmentFeature
-import eu.vironlab.mc.feature.punishment.PunishmentListener
-import eu.vironlab.mc.util.CloudUtil
-import java.io.File
-import java.net.URI
-import org.slf4j.Logger
+import eu.thesimplecloud.api.command.ICommandSender
+import eu.thesimplecloud.launcher.console.command.CommandType
+import eu.thesimplecloud.launcher.console.command.ICommandHandler
+import eu.thesimplecloud.launcher.console.command.annotations.Command
+import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
+import eu.vironlab.mc.extension.replaceColor
+import eu.vironlab.vextension.extension.toCleanString
 
-class VelocityLoader @Inject constructor(val server: ProxyServer, val logger: Logger) {
+@Command("broadcast", CommandType.INGAME, "backend.broadcast", ["bc", "alert"])
+class BroadcastCommand(val feature: DefaultBroadcastFeature) : ICommandHandler {
 
-    init {
-        VextensionDownloader.loadVextension(
-            File(
-                URI(
-                    CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("vextensionLibDir")
-                        .getBlocking()
-                        .getValue() ?: throw IllegalStateException("Cannot find Module")
-                )
-            )
-        )
-        logger.info("=== Backend by VironLab - https://github.com/VironLab ===")
-    }
-
-    @Subscribe
-    fun init(event: ProxyInitializeEvent) {
-        CloudUtil.initOnService()
-        val punishmentFeature = CloudUtil.featureRegistry.getFeature(PunishmentFeature::class.java)?.let {
-            val punishListener = PunishmentListener(it)
-            server.eventManager.register(this, punishListener)
-            CloudAPI.instance.getEventManager().registerListener(CloudAPI.instance.getThisSidesCloudModule(), punishListener)
+    @CommandSubPath
+    fun broadcast(sender: ICommandSender, args: Array<String>) {
+        val message = feature.format.replace("%message%", args.toCleanString().replaceColor())
+        CloudAPI.instance.getCloudPlayerManager().getAllOnlinePlayers().getBlocking().forEach { player ->
+            player.getCloudPlayer().getBlocking().sendMessage(message)
         }
     }
-
 
 }

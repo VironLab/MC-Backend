@@ -8,3 +8,12 @@ depend:
 loadbefore:
   - SimpleCloud-Plugin
   - SimpleCloud-Permission
+commands:
+  menu:
+    usage: menu
+    description: Open the Menu
+  gamemode:
+    usage: gamemode
+    description: Change your Gamemode
+    aliases:
+      - gm

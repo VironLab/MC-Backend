@@ -70,11 +70,13 @@ class DefaultBroadcastFeature(
         )
         config.saveConfig()
         this.format = config.getString("format")!!
+        println("TEST")
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
             {
                 val currentBroadcast =
                     config.get<MutableList<String>>("messages", object : TypeToken<MutableList<String>>() {}.type)!!
                         .random()
+                println(currentBroadcast)
                 CloudAPI.instance.getCloudPlayerManager().getAllOnlinePlayers().getBlocking().forEach { player ->
                     player.getCloudPlayer().getBlocking().sendMessage(
                         this.format.replace(

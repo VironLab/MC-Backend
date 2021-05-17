@@ -47,21 +47,23 @@ enum class PunishType {
 
 data class Punishment(
     val id: String,
-    val active: Boolean,
+    var active: Boolean,
     val executor: String, //System or UUID
     val reason: String,
     val type: PunishType,
     val executionTime: Long,
     val expirationTime: Long,
-    val unPunishReason: String? = null,
-    val unPunishExecutor: String? = null
+    var unPunishReason: String? = null,
+    var unPunishExecutor: String? = null
 ) {
 }
 
 data class PunishReason(
     val id: Int,
     val name: String,
-    val durations: MutableList<PunishDuration>
+    val durations: MutableList<PunishDuration>,
+    val ignorePermission: String? = null,
+    val permission: String? = null
 ) {
 }
 

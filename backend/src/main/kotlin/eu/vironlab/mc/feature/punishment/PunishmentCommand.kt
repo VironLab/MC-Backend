@@ -129,6 +129,7 @@ class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val message
         sender.sendMessage(msg.toString())
     }
 
+
     @CommandSubPath("<user> <id>")
     fun addPunishment(
         sender: ICommandSender,

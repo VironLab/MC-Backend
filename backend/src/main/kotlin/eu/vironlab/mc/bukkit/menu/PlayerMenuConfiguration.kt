@@ -35,46 +35,8 @@
  *<p>
  */
 
-package eu.vironlab.mc.velocity
-
-import com.google.inject.Inject
-import com.velocitypowered.api.event.Subscribe
-import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
-import com.velocitypowered.api.proxy.ProxyServer
-import eu.thesimplecloud.api.CloudAPI
-import eu.vironlab.mc.VextensionDownloader
-import eu.vironlab.mc.extension.initOnService
-import eu.vironlab.mc.feature.punishment.PunishmentFeature
-import eu.vironlab.mc.feature.punishment.PunishmentListener
-import eu.vironlab.mc.util.CloudUtil
-import java.io.File
-import java.net.URI
-import org.slf4j.Logger
-
-class VelocityLoader @Inject constructor(val server: ProxyServer, val logger: Logger) {
-
-    init {
-        VextensionDownloader.loadVextension(
-            File(
-                URI(
-                    CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("vextensionLibDir")
-                        .getBlocking()
-                        .getValue() ?: throw IllegalStateException("Cannot find Module")
-                )
-            )
-        )
-        logger.info("=== Backend by VironLab - https://github.com/VironLab ===")
-    }
-
-    @Subscribe
-    fun init(event: ProxyInitializeEvent) {
-        CloudUtil.initOnService()
-        val punishmentFeature = CloudUtil.featureRegistry.getFeature(PunishmentFeature::class.java)?.let {
-            val punishListener = PunishmentListener(it)
-            server.eventManager.register(this, punishListener)
-            CloudAPI.instance.getEventManager().registerListener(CloudAPI.instance.getThisSidesCloudModule(), punishListener)
-        }
-    }
+package eu.vironlab.mc.bukkit.menu
 
 
+class PlayerMenuConfiguration {
 }

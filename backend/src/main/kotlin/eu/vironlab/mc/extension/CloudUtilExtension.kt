@@ -38,7 +38,6 @@
 package eu.vironlab.mc.extension
 
 import eu.thesimplecloud.api.CloudAPI
-import eu.vironlab.mc.VextensionDownloader
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
 import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
 import eu.vironlab.mc.feature.punishment.PunishmentFeature
@@ -52,15 +51,6 @@ import java.nio.file.Paths
 
 fun CloudUtil.initOnService() {
     try {
-        VextensionDownloader.loadVextension(
-            File(
-                URI(
-                    CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("vextensionLibDir")
-                        .getBlocking()
-                        .getValue() ?: throw IllegalStateException("Cannot find Module")
-                )
-            )
-        )
         this.dataFolder =
             Paths.get(
                 URI(
