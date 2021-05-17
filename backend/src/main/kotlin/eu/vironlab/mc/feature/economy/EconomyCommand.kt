@@ -46,6 +46,7 @@ import eu.thesimplecloud.launcher.console.command.annotations.Command
 import eu.thesimplecloud.launcher.console.command.annotations.CommandArgument
 import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
 import eu.thesimplecloud.launcher.console.command.provider.CloudPlayerCommandSuggestionProvider
+import eu.thesimplecloud.launcher.console.command.provider.ICommandSuggestionProvider
 import eu.vironlab.mc.Backend
 import eu.vironlab.mc.extension.replace
 import eu.vironlab.vextension.document.document
@@ -67,13 +68,23 @@ class EconomyCommand(val economyFeature: EconomyFeature, val messages: EconomyMe
         )
     }
 
-    @CommandSubPath("set <player> <coins>")
+    @CommandSubPath("<action> <player> <coins>")
     fun setCoins(
         sender: ICommandSender,
+        @CommandArgument("action", CoinActionSuggestionProvider::class) action: String,
         @CommandArgument("player", CloudPlayerCommandSuggestionProvider::class) player: String,
         @CommandArgument("coins") coinsStr: String
     ) {
-        val coins = coinsStr.toIntOrNull() ?: run {
+        if (!sender.hasPermissionSync("backend.cmd.eco.edit")) {
+            sender.sendMessage(
+                messages.prefix + Backend.instance.messages.permissionMissing.replace(
+                    "%permission%",
+                    "backend.cmd.eco.edit"
+                )
+            )
+            return
+        }
+        val coins = coinsStr.toLongOrNull() ?: run {
             sender.sendMessage(
                 messages.prefix + Backend.instance.messages.interferedType.replace(
                     document(
@@ -84,14 +95,59 @@ class EconomyCommand(val economyFeature: EconomyFeature, val messages: EconomyMe
             )
             return
         }
-        if (!sender.hasPermissionSync("backend.eco.edit")) {
-            sender.sendMessage(messages.prefix + messages.cannotEdit)
-            return
+        val target =
+            CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(player).getBlockingOrNull() ?: run {
+                sender.sendMessage(messages.prefix + Backend.instance.messages.playerNotExist.replace("%name%", player))
+                return@setCoins
+            }
+        when (action.toLowerCase()) {
+            "add" -> {
+                economyFeature.addCoins(coins, target);
+                sender.sendMessage(
+                    messages.prefix + messages.addCoinsMessage.replace(
+                        document(
+                            "name",
+                            target.getDisplayName()
+                        ).append("coins", coins)
+                    )
+                )
+            }
+            "remove" -> {
+                economyFeature.removeCoins(coins, target)
+                sender.sendMessage(
+                    messages.prefix + messages.addCoinsMessage.replace(
+                        document(
+                            "name",
+                            target.getDisplayName()
+                        ).append("coins", coins)
+                    )
+                )
+            }
+            "set" -> {
+                economyFeature.setCoins(coins, target)
+                sender.sendMessage(
+                    messages.prefix + messages.addCoinsMessage.replace(
+                        document(
+                            "name",
+                            target.getDisplayName()
+                        ).append("coins", coins)
+                    )
+                )
+            }
+            else -> {
+                sender.sendMessage(messages.prefix + messages.editUsage)
+                return
+            }
         }
-        val target = CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(player).getBlockingOrNull() ?: run {
-            sender.sendMessage(messages.prefix + Backend.instance.messages.playerNotExist.replace("%name%", player))
-            return@setCoins
+    }
+}
+
+class CoinActionSuggestionProvider : ICommandSuggestionProvider {
+    override fun getSuggestions(sender: ICommandSender, fullCommand: String, lastArgument: String): List<String> {
+        return if (sender.hasPermissionSync("backend.cmd.eco.edit")) {
+            mutableListOf<String>("set", "remove", "add")
+        } else {
+            mutableListOf<String>()
         }
-        economyFeature.setCoins(coins.toLong(), target)
     }
 }

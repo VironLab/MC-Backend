@@ -35,31 +35,14 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.broadcast
+package eu.vironlab.mc.feature.economy.event
 
-import eu.thesimplecloud.api.CloudAPI
-import eu.thesimplecloud.api.command.ICommandSender
-import eu.thesimplecloud.launcher.console.command.CommandType
-import eu.thesimplecloud.launcher.console.command.ICommandHandler
-import eu.thesimplecloud.launcher.console.command.annotations.Command
-import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
-import eu.vironlab.mc.extension.replaceColor
-import eu.vironlab.mc.util.CloudUtil
-import eu.vironlab.vextension.extension.toCleanString
+import eu.thesimplecloud.api.eventapi.ISynchronizedEvent
+import java.util.*
 
-@Command("broadcast", CommandType.INGAME, "backend.broadcast", ["bc", "alert"])
-class BroadcastCommand(val feature: DefaultBroadcastFeature) : ICommandHandler {
 
-    @CommandSubPath
-    fun broadcast(sender: ICommandSender, args: Array<String>) {
-        if (args.isEmpty()) {
-            sender.sendMessage(CloudUtil.prefix + feature.commandUsage)
-            return
-        }
-        val message = feature.format.replace("%message%", args.toCleanString().replaceColor())
-        CloudAPI.instance.getCloudPlayerManager().getAllOnlinePlayers().getBlocking().forEach { player ->
-            player.getCloudPlayer().getBlocking().sendMessage(message)
-        }
-    }
-
+enum class CoinUpdateAction {
+    ADD, REMOVE, SET
 }
+
+class UpdateCoinsEvent(val player: UUID, val coinsBefore: Long, val coinsNow: Long, val action: CoinUpdateAction) : ISynchronizedEvent

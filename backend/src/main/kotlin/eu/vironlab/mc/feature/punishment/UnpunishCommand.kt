@@ -45,12 +45,13 @@ import eu.thesimplecloud.launcher.console.command.ICommandHandler
 import eu.thesimplecloud.launcher.console.command.annotations.Command
 import eu.thesimplecloud.launcher.console.command.annotations.CommandArgument
 import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
+import eu.thesimplecloud.launcher.console.command.provider.CloudPlayerCommandSuggestionProvider
 import eu.thesimplecloud.launcher.console.command.provider.ICommandSuggestionProvider
 import eu.vironlab.mc.Backend
 import eu.vironlab.vextension.extension.toCleanString
 import java.util.*
 
-@Command("unpunish", CommandType.INGAME, "backend.cmd.unpunish", aliases = ["unban", "unmute", "pardon"])
+@Command("unpunish", CommandType.INGAME, aliases = ["unban", "unmute", "pardon"])
 class UnpunishCommand(val punishFeature: PunishmentFeature, val messageConfig: PunishmentMessageConfig) :
     ICommandHandler {
 
@@ -62,9 +63,18 @@ class UnpunishCommand(val punishFeature: PunishmentFeature, val messageConfig: P
     fun unpunish(
         sender: ICommandSender,
         argsRaw: Array<String>,
-        @CommandArgument("player") playerStr: String,
+        @CommandArgument("player", CloudPlayerCommandSuggestionProvider::class) playerStr: String,
         @CommandArgument("id", UnpunishListIds::class) id: String
     ) {
+        if (!sender.hasPermissionSync("backend.cmd.unpunish")) {
+            sender.sendMessage(
+                messageConfig.prefix + Backend.instance.messages.permissionMissing.replace(
+                    "%permission%",
+                    "backend.cmd.unpunish"
+                )
+            )
+            return
+        }
         val args = Arrays.copyOfRange(argsRaw, 2, argsRaw.size)
         if (args.isEmpty()) {
             sender.sendMessage(messageConfig.prefix + messageConfig.noUnpunishReason)
@@ -101,6 +111,12 @@ class UnpunishCommand(val punishFeature: PunishmentFeature, val messageConfig: P
 
 class UnpunishListIds : ICommandSuggestionProvider {
     override fun getSuggestions(sender: ICommandSender, fullCommand: String, lastArgument: String): List<String> {
+        if (!sender.hasPermissionSync("backend.cmd.unpunish")) {
+            sender.sendMessage("LOLLLLL")
+            return mutableListOf()
+        }
+        sender.sendMessage(fullCommand.split(" ")[1])
+        sender.sendMessage((CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(fullCommand.split(" ")[1]).getBlockingOrNull() == null).toString())
         return (CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(fullCommand.split(" ")[1])
             .getBlockingOrNull() ?: run { return mutableListOf() }).let {
             punishFeature.getPunishments(it.getUniqueId()).punishments.map { punishment -> punishment.id }

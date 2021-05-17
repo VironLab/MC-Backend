@@ -45,5 +45,9 @@ class EconomyMessageConfiguration {
     val prefix: String = CloudUtil.prefix
     val coinInfo = "You have §a%coins% §7Coins"
     val cannotEdit = "You are not allowed to edit Coins"
+    val editUsage: String = "Please use §2/coins <add|set|remove> <player>"
+    val setCoinsMessage: String = "You have set the Coins of §2%name%§7 to §a%coins%"
+    val addCoinsMessage: String = "You have added §a%coins% §7to §2%player%"
+    val removeCoinsMessage: String = "You have removed §a%coins% §7to §2%player%"
 
 }

@@ -146,29 +146,8 @@ internal object VextensionDownloader {
     fun loadVextensionBukkit(path: File) {
         val filePath = "vextension/"
         val folder = File(path, filePath)
-        val urlStrCommon =
-            "https://ci.vironlab.eu/job/Vextension/lastSuccessfulBuild/artifact/vextension-common/build/libs/vextension-common.jar"
-        val fileNameCommon = "vextension-common.jar"
-        val destCommon = File(folder, fileNameCommon)
-        try {
-            if (!destCommon.exists()) {
-                println("Downloading library $fileNameCommon !")
-                destCommon.parentFile.mkdirs()
-                val requestURL = URL(urlStrCommon)
-                Files.copy(requestURL.openStream(), destCommon.toPath())
-            }
-            try {
-                DependencyClassLoader().addJarToClasspath(destCommon)
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-                return
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return
-        }
         val urlStr =
-            "https://ci.vironlab.eu/job/Vextension/lastSuccessfulBuild/artifact/vextension-common/build/libs/vextension-minecraft-server.jar"
+            "https://ci.vironlab.eu/job/Vextension/lastSuccessfulBuild/artifact/vextension-minecraft-server/build/libs/vextension-minecraft-server.jar"
         val fileName = "vextension-minecraft-server.jar"
         val dest = File(folder, fileName)
         try {

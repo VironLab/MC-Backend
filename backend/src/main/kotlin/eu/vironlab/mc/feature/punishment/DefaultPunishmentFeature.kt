@@ -120,7 +120,7 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : Puni
         )
 
     fun dischargeString(timeout: Long): String = if (timeout == 0L) {
-        messages.permanent
+        messages.permanentExpire
     } else {
         this.periodFormatter.print(Period(System.currentTimeMillis(), timeout))
     }

@@ -52,7 +52,7 @@ import eu.vironlab.mc.Backend
 import eu.vironlab.mc.extension.replace
 import eu.vironlab.vextension.document.document
 
-@Command("punish", CommandType.INGAME, "backend.cmd.punish", aliases = ["ban", "kick", "mute", "ban-ip"])
+@Command("punish", CommandType.INGAME,  aliases = ["ban", "kick", "mute", "ban-ip"])
 class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val messageConfig: PunishmentMessageConfig) :
     ICommandHandler {
 
@@ -85,13 +85,22 @@ class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val message
 
     @CommandSubPath
     fun sendInfo(sender: ICommandSender) {
+        if (!sender.hasPermissionSync("backend.cmd.punish")) {
+            sender.sendMessage(
+                messageConfig.prefix + Backend.instance.messages.permissionMissing.replace(
+                    "%permission%",
+                    "backend.cmd.unpunish"
+                )
+            )
+            return
+        }
         sender.sendMessage(infoMessage)
     }
 
     @CommandSubPath("<user>")
     fun handleUser(
         sender: ICommandSender,
-        @CommandArgument("user", PunishUserArgSuggestionProvider::class) user: String
+        @CommandArgument("user", CloudPlayerCommandSuggestionProvider::class) user: String
     ) {
         sendInfo(sender)
     }
@@ -101,7 +110,16 @@ class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val message
         sender: ICommandSender,
         @CommandArgument("user", CloudPlayerCommandSuggestionProvider::class) user: String,
         @CommandArgument("id", CloudPlayerCommandSuggestionProvider::class) idStr: String,
-    ) {}
+    ) {
+        if (!sender.hasPermissionSync("backend.cmd.punish")) {
+            sender.sendMessage(
+                messageConfig.prefix + Backend.instance.messages.permissionMissing.replace(
+                    "%permission%",
+                    "backend.cmd.unpunish"
+                )
+            )
+        }
+    }
 
     @CommandSubPath("<user> info")
     fun sendPlayerInfo(
@@ -109,7 +127,12 @@ class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val message
         @CommandArgument("user", CloudPlayerCommandSuggestionProvider::class) user: String
     ) {
         if (!sender.hasPermissionSync("backend.cmd.punish.info")) {
-            sender.sendMessage(messageConfig.prefix + messageConfig.cannotAccessInfo)
+            sender.sendMessage(
+                messageConfig.prefix + Backend.instance.messages.permissionMissing.replace(
+                    "%permission%",
+                    "backend.cmd.punish.info"
+                )
+            )
             return@sendPlayerInfo
         }
         val target = CloudAPI.instance.getCloudPlayerManager().getOfflineCloudPlayer(user).getBlockingOrNull() ?: run {
@@ -122,9 +145,17 @@ class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val message
                 return@sendPlayerInfo
             }
         }
-        val msg = StringBuilder(messageConfig.prefix).append(messageConfig.infoHeader.replace("%name%", target.getName()))
+        val msg =
+            StringBuilder(messageConfig.prefix).append(messageConfig.infoHeader.replace("%name%", target.getName()))
         punishments.forEach {
-            msg.append("\n" + messageConfig.prefix + messageConfig.infoTemplate.replace(document("id", it.id).append("reason", it.reason).append("type", it.type).append("active", it.active)))
+            msg.append(
+                "\n" + messageConfig.prefix + messageConfig.infoTemplate.replace(
+                    document(
+                        "id",
+                        it.id
+                    ).append("reason", it.reason).append("type", it.type).append("active", it.active)
+                )
+            )
         }
         sender.sendMessage(msg.toString())
     }
@@ -136,6 +167,14 @@ class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val message
         @CommandArgument("user", CloudPlayerCommandSuggestionProvider::class) user: String,
         @CommandArgument("id", PunishIdSuggestionProvider::class) idStr: String
     ) {
+        if (!sender.hasPermissionSync("backend.cmd.punish")) {
+            sender.sendMessage(
+                messageConfig.prefix + Backend.instance.messages.permissionMissing.replace(
+                    "%permission%",
+                    "backend.cmd.unpunish"
+                )
+            )
+        }
         if (idStr.equals("info", true)) {
             sendPlayerInfo(sender, user)
             return
@@ -165,9 +204,9 @@ class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val message
         reason.permission?.let {
             if (!sender.hasPermissionSync(reason.permission!!)) {
                 sender.sendMessage(
-                    messageConfig.prefix + messageConfig.reasonNotAllowed.replace(
-                        "%reason%",
-                        reason.name
+                    messageConfig.prefix + Backend.instance.messages.permissionMissing.replace(
+                        "%permission%",
+                        reason.permission!!
                     )
                 )
                 return@addPunishment
@@ -199,15 +238,6 @@ class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val message
                 ).append("id", punishId).append("reason", reason.name)
             )
         )
-    }
-}
-
-class PunishUserArgSuggestionProvider : ICommandSuggestionProvider {
-    override fun getSuggestions(sender: ICommandSender, fullCommand: String, lastArgument: String): List<String> {
-        return mutableListOf("info").let { list ->
-            list.addAll(
-                CloudAPI.instance.getCloudPlayerManager().getAllCachedObjects().map { it.getName() }); list
-        }
     }
 }
 

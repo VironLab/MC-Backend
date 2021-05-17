@@ -53,12 +53,14 @@ class DefaultBroadcastFeature(
 
     val config: ConfigDocument = ConfigDocument(messagesFile).also { it.loadConfig() }
     val format: String
+    val commandUsage: String
 
     init {
         config.getString(
             "format",
             "§8=====================================================\n\n §c§lBROADCAST §7➜ %message% \n\n§8====================================================="
         )
+        config.getString("commandUsage", "Please use /broadcast <message>")
         config.getLong("delay", 5)
         config.get(
             "messages",
@@ -69,6 +71,7 @@ class DefaultBroadcastFeature(
             )
         )
         config.saveConfig()
+        this.commandUsage = config.getString("commandUsage")!!
         this.format = config.getString("format")!!
         println("TEST")
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(

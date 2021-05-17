@@ -43,6 +43,7 @@ import eu.vironlab.mc.bukkit.gamemode.GameModeMessageConfiguration
 import eu.vironlab.mc.bukkit.gamemode.GamemodeCommand
 import eu.vironlab.mc.bukkit.menu.PlayerMenu
 import eu.vironlab.mc.bukkit.menu.PlayerMenuListenerCommand
+import eu.vironlab.mc.config.BackendMessageConfiguration
 import eu.vironlab.mc.extension.initOnService
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.item.bukkit.BukkitItemEventConsumer
@@ -65,11 +66,14 @@ class BukkitLoader : JavaPlugin() {
 
     lateinit var cloudUtil: CloudUtil
     lateinit var cfg: BukkitConfiguration
+    lateinit var backendMessages: BackendMessageConfiguration
 
     override fun onEnable() {
         CloudUtil.initOnService()
         logger.info("Loaded Vextension by VironLab: https://github.com/VironLab/Vextension")
         Bukkit.getPluginManager().registerEvents(BukkitItemEventConsumer(), this)
+        this.backendMessages = CloudAPI.instance.getGlobalPropertyHolder()
+            .requestProperty<BackendMessageConfiguration>("backendMessageConfig").getBlocking().getValue()
         this.cfg = CloudAPI.instance.getGlobalPropertyHolder().requestProperty<BukkitConfiguration>("bukkitConfig")
             .getBlocking().getValue()
         if (cfg.playermenu) {
@@ -82,7 +86,8 @@ class BukkitLoader : JavaPlugin() {
             getCommand("gamemode")!!.setExecutor(
                 GamemodeCommand(
                     CloudAPI.instance.getGlobalPropertyHolder()
-                        .requestProperty<GameModeMessageConfiguration>("gamemodeConfig").getBlocking().getValue()
+                        .requestProperty<GameModeMessageConfiguration>("gamemodeConfig").getBlocking().getValue(),
+                    this.backendMessages
                 )
             )
         }

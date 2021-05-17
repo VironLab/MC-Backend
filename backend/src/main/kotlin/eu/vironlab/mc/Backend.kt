@@ -116,6 +116,7 @@ class Backend : ICloudModule {
             initBukkit(config.get("features", BukkitConfiguration::class.java)!!)
             EventUtil.instance = ManagerGlobalEventProvider()
             CloudAPI.instance.getGlobalPropertyHolder().let {
+                it.setProperty<BackendMessageConfiguration>("backendMessageConfig", this.messages)
                 it.setProperty<String>("dataFolder", dataFolder.toPath().toUri().toString())
                 it.setProperty<String>("prefix", CloudUtil.prefix)
                 it.setProperty<String>("coinsPropertyName", "coins")
