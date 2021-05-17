@@ -67,7 +67,7 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
     @Subscribe(order = PostOrder.FIRST)
     fun handleMessage(e: PlayerChatEvent) {
         println(mutes.keys.toString())
-        println(mutes[UUID.fromString("7c79c553-56ef-497a-b9b8-87aafbdb3e28")]!!.map { it.toString() + "\n"})
+        println(mutes[UUID.fromString("7c79c553-56ef-497a-b9b8-87aafbdb3e28")]!!.map { it.toString() + "\n" })
         if (mutes[e.player.uniqueId]?.isNotEmpty() == true) {
             check(e.player.uniqueId, mutes[e.player.uniqueId]!!, update = false, PunishType.MUTE, PunishType.PERMA_MUTE)?.let {
                 e.player.sendMessage(Component.text(punishmentFeature.getMuteMessage(it)))
@@ -87,17 +87,17 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
         }
         val activePunishments = punishments.filter { it.active }
         GlobalScope.launch {
-            val mutesToAdd: MutableList<Punishment> = mutableListOf()
-            var updatePunishments = false
+            val mutes: MutableList<Punishment> = mutableListOf()
+            var changed = false
             punishments.forEach {
                 if (it.active && it.expirationTime < System.currentTimeMillis()) {
                     it.active = false
-                    updatePunishments = true
+                    changed = true
                 } else if (it.type == PunishType.MUTE || it.type == PunishType.PERMA_MUTE)
-                    mutesToAdd.add(it)
+                    mutes.add(it)
             }
-            mutes[player] = mutesToAdd
-            if (update && updatePunishments)
+            this@PunishmentListener.mutes[player] = mutes
+            if (update && changed)
                 punishmentFeature.updatePunishments(player, PlayerPunishmentData(punishments))
         }
         val validPunishments = activePunishments.filter { type.contains(it.type) }.toMutableList()
@@ -106,7 +106,7 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
         }
         if (validPunishments.isNotEmpty())
             validPunishments[0].let {
-                if (it.expirationTime < System.currentTimeMillis())
+                if (it.expirationTime > System.currentTimeMillis())
                     return it
             }
         return null
@@ -127,17 +127,14 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
     fun handlePunishmentAdd(e: PunishmentAddEvent) {
         when (e.punishment.type) {
             PunishType.MUTE, PunishType.PERMA_MUTE ->
-                if (mutes.containsKey(e.target)) {
+                if (!mutes[e.target]!!.any { e.punishment.id == it.id })
                     mutes[e.target]!!.add(e.punishment)
-                }
         }
     }
 
     @Subscribe
     fun handleQuit(e: DisconnectEvent) {
-        if (this.mutes.containsKey(e.player.uniqueId)) {
-            this.mutes.remove(e.player.uniqueId)
-        }
+        this.mutes.remove(e.player.uniqueId)
     }
 
 
