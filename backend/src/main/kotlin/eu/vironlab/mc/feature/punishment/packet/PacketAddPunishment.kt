@@ -35,12 +35,33 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.punishment.packet
 
-interface FeatureRegistry {
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.vironlab.mc.feature.punishment.manager.ManagerPacketPunishConstant
+import java.util.*
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+class PacketAddPunishment() : JsonPacket() {
+
+    constructor(reason: Int, executor: String, player: UUID) : this() {
+        this.jsonLib.append("player", player).append("reasonId", reason).append("executor", executor)
+    }
+
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<String> {
+        val reasonId = this.jsonLib.getInt("reasonId") ?: return contentException("reasonId")
+        val executor = this.jsonLib.getString("executor") ?: return contentException("executor")
+        val playerId = this.jsonLib.getObject("player", UUID::class.java) ?: return contentException("player")
+        return CommunicationPromise.of(
+            ManagerPacketPunishConstant.punishmentFeature.addPunishment(
+                reasonId,
+                executor,
+                playerId
+            )
+        )
+    }
 
 }

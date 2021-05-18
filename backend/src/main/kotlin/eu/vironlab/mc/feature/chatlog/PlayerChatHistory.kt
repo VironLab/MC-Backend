@@ -35,12 +35,9 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.chatlog
 
-interface FeatureRegistry {
+import java.util.*
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
-
-}
+class PlayerChatHistory(val uuid: UUID, val messages: MutableList<String>)

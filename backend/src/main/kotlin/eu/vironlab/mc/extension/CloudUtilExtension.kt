@@ -38,20 +38,24 @@
 package eu.vironlab.mc.extension
 
 import eu.thesimplecloud.api.CloudAPI
+import eu.vironlab.mc.feature.BackendFeatureConfiguration
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
-import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
-import eu.vironlab.mc.feature.punishment.PunishmentFeature
+import eu.vironlab.mc.feature.broadcast.service.DefaultServiceBroadcastFeature
+import eu.vironlab.mc.feature.economy.ServiceEconomyFeature
+import eu.vironlab.mc.feature.economy.service.DefaultServiceEconomyFeature
+import eu.vironlab.mc.feature.punishment.ServicePunishmentFeature
+import eu.vironlab.mc.feature.punishment.service.DefaultServicePunishmentFeature
+import eu.vironlab.mc.service.feature.broadcast.ServiceBroadcastFeature
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.mc.util.EventUtil
 import eu.vironlab.mc.util.ServiceGlobalEventProvider
 import eu.vironlab.vextension.database.factory.createDatabaseClient
 import eu.vironlab.vextension.database.mongo.MongoDatabaseClient
 import eu.vironlab.vextension.document.documentFromJson
-import java.io.File
 import java.net.URI
 import java.nio.file.Paths
 
-fun CloudUtil.initOnService() {
+fun CloudUtil.initOnService(featureConfig: BackendFeatureConfiguration) {
     try {
         EventUtil.instance = ServiceGlobalEventProvider()
         this.dataFolder =
@@ -72,13 +76,15 @@ fun CloudUtil.initOnService() {
                 ).connectionData()
         }.also { it.init() }
         this.featureRegistry = DefaultFeatureRegistry().also {
-            CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("punishmentDir").getBlockingOrNull()
-                ?.getValue()?.let { pathStr ->
-                    it.registerFeature(
-                        PunishmentFeature::class.java,
-                        DefaultPunishmentFeature(this, File(pathStr))
-                    )
-                }
+            if (featureConfig.punishment) {
+                it.registerFeature(ServicePunishmentFeature::class.java, DefaultServicePunishmentFeature())
+            }
+            if (featureConfig.economy) {
+                it.registerFeature(ServiceEconomyFeature::class.java, DefaultServiceEconomyFeature())
+            }
+            if (featureConfig.broadcast) {
+                it.registerFeature(ServiceBroadcastFeature::class.java, DefaultServiceBroadcastFeature())
+            }
         }
     } catch (e: Exception) {
         e.printStackTrace()

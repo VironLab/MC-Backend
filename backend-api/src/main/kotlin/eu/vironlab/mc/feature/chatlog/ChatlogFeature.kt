@@ -35,12 +35,13 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.chatlog
 
-interface FeatureRegistry {
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import java.util.*
 
-    fun <T> getFeature(featureClass: Class<T>): T?
+interface ChatlogFeature {
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+    fun createChatlog(player: UUID): ICommunicationPromise<eu.vironlab.mc.manager.feature.chatlog.Chatlog>
 
 }

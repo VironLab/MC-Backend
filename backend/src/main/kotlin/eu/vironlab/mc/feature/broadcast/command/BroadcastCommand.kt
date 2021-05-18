@@ -35,10 +35,29 @@
  *<p>
  */
 
-package eu.vironlab.mc.bukkit
+package eu.vironlab.mc.feature.broadcast.command
 
+import eu.thesimplecloud.api.command.ICommandSender
+import eu.thesimplecloud.launcher.console.command.CommandType
+import eu.thesimplecloud.launcher.console.command.ICommandHandler
+import eu.thesimplecloud.launcher.console.command.annotations.Command
+import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
+import eu.vironlab.mc.extension.replaceColor
+import eu.vironlab.mc.feature.broadcast.manager.DefaultManagerBroadcastFeature
+import eu.vironlab.mc.util.CloudUtil
+import eu.vironlab.vextension.extension.toCleanString
 
-class BukkitConfiguration {
-    val playermenu: Boolean = true
-    val gamemode: Boolean = true
+@Command("broadcast", CommandType.INGAME, "backend.broadcast", ["bc", "alert"])
+class BroadcastCommand(val feature: DefaultManagerBroadcastFeature) : ICommandHandler {
+
+    @CommandSubPath
+    fun broadcast(sender: ICommandSender, args: Array<String>) {
+        if (args.isEmpty()) {
+            sender.sendMessage(CloudUtil.prefix + feature.commandUsage)
+            return
+        }
+        val message = feature.format.replace("%message%", args.toCleanString().replaceColor())
+        feature.broadcastMessage(message)
+    }
+
 }

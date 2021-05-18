@@ -60,7 +60,14 @@ class PlayerMenuMessageConfiguration {
             "§8 ",
             "§7________________________"
         )
-
+        val lobby = "§bLobby"
+        val lobbyLore: MutableList<String> = mutableListOf(
+            "§7________________________",
+            "§8 ",
+            "§2Go to Lobby",
+            "§8 ",
+            "§7________________________"
+        )
     }
 
 }

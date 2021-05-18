@@ -35,12 +35,20 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.help
 
-interface FeatureRegistry {
+import eu.thesimplecloud.api.command.ICommandSender
+import eu.thesimplecloud.launcher.console.command.CommandType
+import eu.thesimplecloud.launcher.console.command.ICommandHandler
+import eu.thesimplecloud.launcher.console.command.annotations.Command
+import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
 
-    fun <T> getFeature(featureClass: Class<T>): T?
+@Command("help", CommandType.INGAME, aliases = ["?", "about"])
+class HelpCommand(val feature: HelpFeature) : ICommandHandler {
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+    @CommandSubPath
+    fun handle(sender: ICommandSender) {
+        sender.sendMessage(feature.helpMessage)
+    }
 
 }

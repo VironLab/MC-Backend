@@ -35,7 +35,7 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.punishment
+package eu.vironlab.mc.feature.punishment.service.listener
 
 import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.ResultedEvent
@@ -45,15 +45,17 @@ import com.velocitypowered.api.event.connection.LoginEvent
 import com.velocitypowered.api.event.player.PlayerChatEvent
 import eu.thesimplecloud.api.eventapi.CloudEventHandler
 import eu.thesimplecloud.api.eventapi.IListener
-import eu.vironlab.mc.feature.punishment.event.PunishmentAddEvent
-import eu.vironlab.mc.feature.punishment.event.PunishmentUpdateEvent
+import eu.vironlab.mc.feature.punishment.PlayerPunishmentData
+import eu.vironlab.mc.feature.punishment.PunishType
+import eu.vironlab.mc.feature.punishment.Punishment
+import eu.vironlab.mc.feature.punishment.ServicePunishmentFeature
 import java.util.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 
 
-class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
+class PunishmentListener(val punishmentFeature: ServicePunishmentFeature) : IListener {
 
     val mutes: MutableMap<UUID, MutableList<Punishment>> = mutableMapOf()
 
@@ -66,7 +68,6 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
 
     @Subscribe(order = PostOrder.FIRST)
     fun handleMessage(e: PlayerChatEvent) {
-        println(mutes[e.player.uniqueId]!!.map { it.toString() + "\n" })
         if (mutes[e.player.uniqueId]?.isNotEmpty() == true) {
             check(
                 e.player.uniqueId,
@@ -83,7 +84,7 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
 
     private fun check(
         player: UUID,
-        punishments: MutableList<Punishment> = punishmentFeature.getPunishments(player).punishments.toMutableList(),
+        punishments: MutableList<Punishment> = punishmentFeature.getPunishments(player).getBlocking().punishments.toMutableList(),
         update: Boolean = true,
         vararg type: PunishType
     ): Punishment? {
@@ -101,7 +102,7 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
                     this@PunishmentListener.mutes[player]?.find { pun -> pun.id == it.id }
                         ?.active = false
                 } else if ((it.type == PunishType.MUTE || it.type == PunishType.PERMA_MUTE) && update)
-                    handlePunishmentAdd(PunishmentAddEvent(it, player))
+                    handlePunishmentAdd(eu.vironlab.mc.feature.punishment.event.PunishmentAddEvent(it, player))
             }
             if (update && changed) {
                 this@PunishmentListener.mutes[player] = mutes
@@ -121,7 +122,7 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
     }
 
     @CloudEventHandler
-    fun handlePunishmentUpdate(e: PunishmentUpdateEvent) {
+    fun handlePunishmentUpdate(e: eu.vironlab.mc.feature.punishment.event.PunishmentUpdateEvent) {
         for (punishment in e.punishment)
             when (punishment.type) {
                 PunishType.MUTE, PunishType.PERMA_MUTE ->
@@ -132,7 +133,7 @@ class PunishmentListener(val punishmentFeature: PunishmentFeature) : IListener {
     }
 
     @CloudEventHandler
-    fun handlePunishmentAdd(e: PunishmentAddEvent) {
+    fun handlePunishmentAdd(e: eu.vironlab.mc.feature.punishment.event.PunishmentAddEvent) {
         when (e.punishment.type) {
             PunishType.MUTE, PunishType.PERMA_MUTE -> {
                 if (mutes[e.target] == null)

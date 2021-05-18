@@ -44,8 +44,9 @@ import com.velocitypowered.api.proxy.ProxyServer
 import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.VextensionDownloader
 import eu.vironlab.mc.extension.initOnService
-import eu.vironlab.mc.feature.punishment.PunishmentFeature
-import eu.vironlab.mc.feature.punishment.PunishmentListener
+import eu.vironlab.mc.feature.BackendFeatureConfiguration
+import eu.vironlab.mc.feature.punishment.ServicePunishmentFeature
+import eu.vironlab.mc.feature.punishment.service.listener.PunishmentListener
 import eu.vironlab.mc.util.CloudUtil
 import java.io.File
 import java.net.URI
@@ -68,11 +69,17 @@ class VelocityLoader @Inject constructor(val server: ProxyServer, val logger: Lo
 
     @Subscribe
     fun init(event: ProxyInitializeEvent) {
-        CloudUtil.initOnService()
-        val punishmentFeature = CloudUtil.featureRegistry.getFeature(PunishmentFeature::class.java)?.let {
-            val punishListener = PunishmentListener(it)
-            server.eventManager.register(this, punishListener)
-            CloudAPI.instance.getEventManager().registerListener(CloudAPI.instance.getThisSidesCloudModule(), punishListener)
+        val featureConfig =
+            CloudAPI.instance.getGlobalPropertyHolder().requestProperty<BackendFeatureConfiguration>("features")
+                .getBlocking().getValue()
+        CloudUtil.initOnService(featureConfig)
+        if (featureConfig.punishment) {
+            CloudUtil.featureRegistry.getFeature(ServicePunishmentFeature::class.java)?.let {
+                val punishListener = PunishmentListener(it)
+                server.eventManager.register(this, punishListener)
+                CloudAPI.instance.getEventManager()
+                    .registerListener(CloudAPI.instance.getThisSidesCloudModule(), punishListener)
+            }
         }
     }
 

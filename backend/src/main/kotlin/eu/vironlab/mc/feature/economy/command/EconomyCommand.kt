@@ -52,7 +52,7 @@ import eu.vironlab.mc.extension.replace
 import eu.vironlab.vextension.document.document
 
 @Command("coins", CommandType.INGAME, aliases = ["money"])
-class EconomyCommand(val economyFeature: EconomyFeature, val messages: EconomyMessageConfiguration) : ICommandHandler {
+class EconomyCommand(val economyFeature: ManagerEconomyFeature, val messages: EconomyMessageConfiguration) : ICommandHandler {
 
     @CommandSubPath
     fun showCoins(sender: ICommandSender) {

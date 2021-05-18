@@ -35,12 +35,34 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.help
 
-interface FeatureRegistry {
+import com.google.gson.reflect.TypeToken
+import eu.vironlab.mc.Backend
+import eu.vironlab.mc.util.CloudUtil
+import eu.vironlab.vextension.document.wrapper.ConfigDocument
+import java.io.File
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+class HelpFeature(val backend: Backend) {
+
+    val helpMessage: String
+
+    init {
+        this.helpMessage = ConfigDocument(File(backend.dataFolder, "help/messages.json")).let {
+            it.loadConfig()
+            it.get(
+                "helpMessage",
+                object : TypeToken<MutableList<String>>() {}.type,
+                mutableListOf<String>("Help for VironLab Backend", "/help - shows this message")
+            )!!.also { cfg -> it.saveConfig() }.let { cfg ->
+                val msg = StringBuilder()
+                cfg.forEach { line ->
+                    msg.append(CloudUtil.prefix + line + "\n")
+                }
+                msg.toString()
+            }
+        }
+    }
 
 }

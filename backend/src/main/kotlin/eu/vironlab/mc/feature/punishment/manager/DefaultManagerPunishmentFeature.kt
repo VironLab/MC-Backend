@@ -35,13 +35,17 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.punishment
+package eu.vironlab.mc.feature.punishment.manager
 
 import eu.thesimplecloud.api.CloudAPI
+import eu.thesimplecloud.base.manager.startup.Manager
 import eu.thesimplecloud.module.permission.PermissionPool
+import eu.vironlab.mc.Backend
 import eu.vironlab.mc.extension.replace
+import eu.vironlab.mc.feature.punishment.*
 import eu.vironlab.mc.feature.punishment.event.PunishmentAddEvent
 import eu.vironlab.mc.feature.punishment.event.PunishmentUpdateEvent
+import eu.vironlab.mc.feature.punishment.packet.*
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.mc.util.EventUtil
 import eu.vironlab.vextension.database.Database
@@ -55,7 +59,7 @@ import org.joda.time.Period
 import org.joda.time.format.PeriodFormatter
 import org.joda.time.format.PeriodFormatterBuilder
 
-class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : PunishmentFeature {
+class DefaultManagerPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : ManagerPunishmentFeature {
 
     val messages: PunishmentMessageConfig
     val reasonConfig: ConfigDocument = ConfigDocument(File(configDir, "reasons.json")).let {
@@ -86,6 +90,12 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : Puni
             .appendSeconds().appendSuffix(" ${messages.times.second}", " ${messages.times.seconds}")
             .printZeroNever()
             .toFormatter()
+        ManagerPacketPunishConstant.punishmentFeature = this
+        Manager.instance.packetRegistry.registerPacket(Backend.instance, PacketGetPunishMessageConfig::class.java)
+        Manager.instance.packetRegistry.registerPacket(Backend.instance, PacketUpdatePunishment::class.java)
+        Manager.instance.packetRegistry.registerPacket(Backend.instance, PacketAddPunishment::class.java)
+        Manager.instance.packetRegistry.registerPacket(Backend.instance, PacketGetPunishReasons::class.java)
+        Manager.instance.packetRegistry.registerPacket(Backend.instance, PacketGetPunishments::class.java)
     }
 
     override fun getKickMessage(reason: String): String =
@@ -110,7 +120,12 @@ class DefaultPunishmentFeature(val cloudUtil: CloudUtil, configDir: File) : Puni
         ) {
             punishmentDatabase.insert(player.toString(), data).complete()
         }
-        EventUtil.callGlobal(PunishmentUpdateEvent(punishments.punishments, player))
+        EventUtil.callGlobal(
+            PunishmentUpdateEvent(
+                punishments.punishments,
+                player
+            )
+        )
     }
 
     override fun getMuteMessage(punishment: Punishment): String =

@@ -35,27 +35,19 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.punishment
+package eu.vironlab.mc.feature.economy
 
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
 import java.util.*
 
+interface ServiceEconomyFeature {
 
-interface PunishmentFeature {
+    fun getCoins(player: UUID): ICommunicationPromise<Long>
 
-    fun getKickMessage(reason: String): String
+    fun addCoins(coins: Long, player: UUID): ICommunicationPromise<Unit>
 
-    fun getBanMessage(punishment: Punishment): String
+    fun removeCoins(coins: Long, player: UUID): ICommunicationPromise<Unit>
 
-    fun updatePunishments(player: UUID, data: PlayerPunishmentData)
-
-    fun getMuteMessage(punishment: Punishment): String
-
-    val reasons: MutableMap<Int, PunishReason>
-
-    fun getReason(id: Int): PunishReason?
-
-    fun getPunishments(player: UUID): PlayerPunishmentData
-
-    fun addPunishment(reasonID: Int, executor: String, player: UUID): String
+    fun setCoins(coins: Long, player: UUID): ICommunicationPromise<Unit>
 
 }

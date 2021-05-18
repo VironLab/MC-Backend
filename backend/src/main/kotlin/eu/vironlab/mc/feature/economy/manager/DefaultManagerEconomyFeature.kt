@@ -35,17 +35,24 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.economy
+package eu.vironlab.mc.feature.economy.manager
 
 import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+import eu.thesimplecloud.base.manager.startup.Manager
+import eu.vironlab.mc.Backend
+import eu.vironlab.mc.feature.economy.EconomyMessageConfiguration
+import eu.vironlab.mc.feature.economy.ManagerEconomyFeature
 import eu.vironlab.mc.feature.economy.event.CoinUpdateAction
 import eu.vironlab.mc.feature.economy.event.UpdateCoinsEvent
+import eu.vironlab.mc.feature.economy.packet.PacketGetCoins
+import eu.vironlab.mc.feature.economy.packet.PacketUpdateCoins
 import eu.vironlab.mc.util.EventUtil
 import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import java.io.File
 
 
-class DefaultEconomyFeature(val propertyName: String, val configDir: File) : EconomyFeature {
+class DefaultManagerEconomyFeature(val propertyName: String, val configDir: File) :
+    ManagerEconomyFeature {
 
     val messages: EconomyMessageConfiguration
     val startCoins: Long
@@ -62,6 +69,9 @@ class DefaultEconomyFeature(val propertyName: String, val configDir: File) : Eco
             EconomyMessageConfiguration()
         ).also { cfg -> it.saveConfig() }
         }
+        ManagerPacketCoinsConstant.ecoFeature = this
+        Manager.instance.packetRegistry.registerPacket(Backend.instance, PacketGetCoins::class.java)
+        Manager.instance.packetRegistry.registerPacket(Backend.instance, PacketUpdateCoins::class.java)
     }
 
     override fun getCoins(player: IOfflineCloudPlayer): Long {
@@ -77,19 +87,40 @@ class DefaultEconomyFeature(val propertyName: String, val configDir: File) : Eco
         val before = getCoins(player)
         val new = before + coins
         setCoins0(new, player)
-        EventUtil.callGlobal(UpdateCoinsEvent(player.getUniqueId(), before, new, CoinUpdateAction.ADD))
+        EventUtil.callGlobal(
+            UpdateCoinsEvent(
+                player.getUniqueId(),
+                before,
+                new,
+                CoinUpdateAction.ADD
+            )
+        )
     }
 
     override fun removeCoins(coins: Long, player: IOfflineCloudPlayer) {
         val before = getCoins(player)
         val new = before - coins
         setCoins0(new, player)
-        EventUtil.callGlobal(UpdateCoinsEvent(player.getUniqueId(), before, new, CoinUpdateAction.REMOVE))
+        EventUtil.callGlobal(
+            UpdateCoinsEvent(
+                player.getUniqueId(),
+                before,
+                new,
+                CoinUpdateAction.REMOVE
+            )
+        )
     }
 
     override fun setCoins(coins: Long, player: IOfflineCloudPlayer) {
         setCoins0(coins, player)
-        EventUtil.callGlobal(UpdateCoinsEvent(player.getUniqueId(), getCoins(player), coins, CoinUpdateAction.SET))
+        EventUtil.callGlobal(
+            UpdateCoinsEvent(
+                player.getUniqueId(),
+                getCoins(player),
+                coins,
+                CoinUpdateAction.SET
+            )
+        )
     }
 
     fun setCoins0(coins: Long, player: IOfflineCloudPlayer) {

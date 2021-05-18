@@ -45,6 +45,7 @@ import eu.vironlab.mc.bukkit.menu.PlayerMenu
 import eu.vironlab.mc.bukkit.menu.PlayerMenuListenerCommand
 import eu.vironlab.mc.config.BackendMessageConfiguration
 import eu.vironlab.mc.extension.initOnService
+import eu.vironlab.mc.feature.BackendFeatureConfiguration
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.bukkit.VextensionBukkit
 import eu.vironlab.vextension.item.bukkit.BukkitItemEventConsumer
@@ -57,24 +58,24 @@ import org.bukkit.plugin.java.JavaPlugin
 class BukkitLoader : JavaPlugin() {
 
     lateinit var cloudUtil: CloudUtil
-    lateinit var cfg: BukkitConfiguration
+    lateinit var featureConfiguration: BackendFeatureConfiguration
     lateinit var backendMessages: BackendMessageConfiguration
 
     override fun onEnable() {
-        CloudUtil.initOnService()
+        val featureConfig = CloudAPI.instance.getGlobalPropertyHolder().requestProperty<BackendFeatureConfiguration>("features")
+            .getBlocking().getValue()
+        CloudUtil.initOnService(featureConfig)
         logger.info("Loaded Vextension by VironLab: https://github.com/VironLab/Vextension")
         Bukkit.getPluginManager().registerEvents(BukkitItemEventConsumer(), this)
         this.backendMessages = CloudAPI.instance.getGlobalPropertyHolder()
             .requestProperty<BackendMessageConfiguration>("backendMessageConfig").getBlocking().getValue()
-        this.cfg = CloudAPI.instance.getGlobalPropertyHolder().requestProperty<BukkitConfiguration>("bukkitConfig")
-            .getBlocking().getValue()
-        if (cfg.playermenu) {
+        if (featureConfig.playermenu) {
             val menu = PlayerMenu(this)
             val menuListener = PlayerMenuListenerCommand(menu)
             getCommand("menu")!!.setExecutor(menuListener)
             Bukkit.getPluginManager().registerEvents(menuListener, this)
         }
-        if (cfg.gamemode) {
+        if (featureConfig.gamemode) {
             getCommand("gamemode")!!.setExecutor(
                 GamemodeCommand(
                     CloudAPI.instance.getGlobalPropertyHolder()

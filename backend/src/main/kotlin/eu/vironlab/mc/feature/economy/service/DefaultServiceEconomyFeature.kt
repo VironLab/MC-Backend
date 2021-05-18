@@ -35,12 +35,53 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.economy.service
 
-interface FeatureRegistry {
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.thesimplecloud.plugin.startup.CloudPlugin
+import eu.vironlab.mc.feature.economy.ServiceEconomyFeature
+import eu.vironlab.mc.feature.economy.event.CoinUpdateAction
+import eu.vironlab.mc.feature.economy.packet.PacketGetCoins
+import eu.vironlab.mc.feature.economy.packet.PacketUpdateCoins
+import java.util.*
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+class DefaultServiceEconomyFeature : ServiceEconomyFeature {
+    override fun getCoins(player: UUID): ICommunicationPromise<Long> {
+        return CloudPlugin.instance.connectionToManager.sendQuery(
+            PacketGetCoins(player),
+            Long::class.java
+        )
+    }
+
+    override fun addCoins(coins: Long, player: UUID): ICommunicationPromise<Unit> {
+        return CloudPlugin.instance.connectionToManager.sendQuery<Unit>(
+            PacketUpdateCoins(
+                player,
+                coins,
+                CoinUpdateAction.ADD
+            ), Unit::class.java
+        )
+    }
+
+    override fun removeCoins(coins: Long, player: UUID): ICommunicationPromise<Unit> {
+        return CloudPlugin.instance.connectionToManager.sendQuery<Unit>(
+            PacketUpdateCoins(
+                player,
+                coins,
+                CoinUpdateAction.REMOVE
+            ), Unit::class.java
+        )
+    }
+
+    override fun setCoins(coins: Long, player: UUID): ICommunicationPromise<Unit> {
+        return CloudPlugin.instance.connectionToManager.sendQuery<Unit>(
+            PacketUpdateCoins(
+                player,
+                coins,
+                CoinUpdateAction.SET
+            ), Unit::class.java
+        )
+    }
 
 }

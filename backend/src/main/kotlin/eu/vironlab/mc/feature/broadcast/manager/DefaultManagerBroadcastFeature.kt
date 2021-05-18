@@ -35,21 +35,26 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.broadcast
+package eu.vironlab.mc.feature.broadcast.manager
 
 import com.google.gson.reflect.TypeToken
 import eu.thesimplecloud.api.CloudAPI
+import eu.thesimplecloud.base.manager.startup.Manager
+import eu.vironlab.mc.Backend
+import eu.vironlab.mc.feature.broadcast.ManagerBroadcastFeature
+import eu.vironlab.mc.feature.broadcast.packet.PacketSendBroadcast
 import eu.vironlab.mc.util.CloudUtil
+import eu.vironlab.vextension.document.Document
 import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 
-class DefaultBroadcastFeature(
+class DefaultManagerBroadcastFeature(
     messagesFile: File,
     val cloudUtil: CloudUtil = CloudUtil,
-) {
+) : ManagerBroadcastFeature {
 
     val config: ConfigDocument = ConfigDocument(messagesFile).also { it.loadConfig() }
     val format: String
@@ -73,23 +78,36 @@ class DefaultBroadcastFeature(
         config.saveConfig()
         this.commandUsage = config.getString("commandUsage")!!
         this.format = config.getString("format")!!
-        println("TEST")
+        ManagerPacketBroadcastConstant.broadcastFeature = this
+        Manager.instance.packetRegistry.registerPacket(Backend.instance, PacketSendBroadcast::class.java)
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(
             {
                 val currentBroadcast =
                     config.get<MutableList<String>>("messages", object : TypeToken<MutableList<String>>() {}.type)!!
                         .random()
                 println(currentBroadcast)
-                CloudAPI.instance.getCloudPlayerManager().getAllOnlinePlayers().getBlocking().forEach { player ->
-                    player.getCloudPlayer().getBlocking().sendMessage(
-                        this.format.replace(
-                            "%message%",
-                            currentBroadcast
-                        )
-                    )
+                CloudAPI.instance.getCloudPlayerManager().getAllOnlinePlayers().then { players ->
+                    players.forEach { player ->
+                        player.getCloudPlayer().then {
+                            it.sendMessage(
+                                this.format.replace(
+                                    "%message%",
+                                    currentBroadcast
+                                )
+                            )
+                        }
+                    }
                 }
             }, 0, config.getLong("delay")!!, TimeUnit.MINUTES
         )
+    }
+
+    override fun broadcastMessage(message: String, placeholder: Document) {
+        CloudAPI.instance.getCloudPlayerManager().getAllOnlinePlayers().then { players ->
+            players.forEach { player ->
+                player.getCloudPlayer().then { it.sendMessage(message) }
+            }
+        }
     }
 
 }

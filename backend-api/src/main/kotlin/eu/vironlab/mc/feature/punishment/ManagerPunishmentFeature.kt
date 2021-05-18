@@ -35,12 +35,27 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.punishment
 
-interface FeatureRegistry {
+import java.util.*
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+interface ManagerPunishmentFeature {
+
+    fun getKickMessage(reason: String): String
+
+    fun getBanMessage(punishment: Punishment): String
+
+    fun updatePunishments(player: UUID, data: PlayerPunishmentData)
+
+    fun getMuteMessage(punishment: Punishment): String
+
+    val reasons: MutableMap<Int, PunishReason>
+
+    fun getReason(id: Int): PunishReason?
+
+    fun getPunishments(player: UUID): PlayerPunishmentData
+
+    fun addPunishment(reasonID: Int, executor: String, player: UUID): String
 
 }

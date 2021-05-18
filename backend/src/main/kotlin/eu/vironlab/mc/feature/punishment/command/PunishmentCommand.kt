@@ -50,10 +50,11 @@ import eu.thesimplecloud.launcher.console.command.provider.ICommandSuggestionPro
 import eu.thesimplecloud.module.permission.player.getPermissionPlayer
 import eu.vironlab.mc.Backend
 import eu.vironlab.mc.extension.replace
+import eu.vironlab.mc.feature.punishment.manager.DefaultManagerPunishmentFeature
 import eu.vironlab.vextension.document.document
 
 @Command("punish", CommandType.INGAME,  aliases = ["ban", "kick", "mute", "ban-ip"])
-class PunishmentCommand(val punishFeature: DefaultPunishmentFeature, val messageConfig: PunishmentMessageConfig) :
+class PunishmentCommand(val punishFeature: DefaultManagerPunishmentFeature, val messageConfig: PunishmentMessageConfig) :
     ICommandHandler {
 
     val infoMessage: String =

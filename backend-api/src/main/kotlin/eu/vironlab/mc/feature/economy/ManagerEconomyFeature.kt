@@ -35,12 +35,18 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.economy
 
-interface FeatureRegistry {
+import eu.thesimplecloud.api.player.IOfflineCloudPlayer
 
-    fun <T> getFeature(featureClass: Class<T>): T?
+interface ManagerEconomyFeature {
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+    fun getCoins(player: IOfflineCloudPlayer): Long
+
+    fun addCoins(coins: Long, player: IOfflineCloudPlayer)
+
+    fun removeCoins(coins: Long, player: IOfflineCloudPlayer)
+
+    fun setCoins(coins: Long, player: IOfflineCloudPlayer)
 
 }

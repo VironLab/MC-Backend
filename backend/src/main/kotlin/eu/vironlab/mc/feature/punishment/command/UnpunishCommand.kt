@@ -35,7 +35,7 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.punishment
+package eu.vironlab.mc.feature.punishment.command
 
 import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.command.ICommandSender
@@ -48,11 +48,14 @@ import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
 import eu.thesimplecloud.launcher.console.command.provider.CloudPlayerCommandSuggestionProvider
 import eu.thesimplecloud.launcher.console.command.provider.ICommandSuggestionProvider
 import eu.vironlab.mc.Backend
+import eu.vironlab.mc.feature.punishment.ManagerPunishmentFeature
+import eu.vironlab.mc.feature.punishment.PunishmentMessageConfig
+import eu.vironlab.mc.feature.punishment.PlayerPunishmentData
 import eu.vironlab.vextension.extension.toCleanString
 import java.util.*
 
 @Command("unpunish", CommandType.INGAME, aliases = ["unban", "unmute", "pardon"])
-class UnpunishCommand(val punishFeature: PunishmentFeature, val messageConfig: PunishmentMessageConfig) :
+class UnpunishCommand(val punishFeature: ManagerPunishmentFeature, val messageConfig: PunishmentMessageConfig) :
     ICommandHandler {
 
     init {
@@ -125,7 +128,7 @@ class UnpunishListIds : ICommandSuggestionProvider {
 
     companion object {
         @JvmStatic
-        lateinit var punishFeature: PunishmentFeature
+        lateinit var punishFeature: ManagerPunishmentFeature
     }
 
 }

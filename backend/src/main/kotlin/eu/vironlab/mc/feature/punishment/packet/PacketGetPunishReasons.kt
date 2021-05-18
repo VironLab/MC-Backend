@@ -35,12 +35,19 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.punishment.packet
 
-interface FeatureRegistry {
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.vironlab.mc.feature.punishment.manager.ManagerPacketPunishConstant
+import eu.vironlab.vextension.document.document
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+class PacketGetPunishReasons() : JsonPacket() {
 
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<String> {
+        return CommunicationPromise.of(document(ManagerPacketPunishConstant.punishmentFeature.reasons).toJson())
+    }
 }

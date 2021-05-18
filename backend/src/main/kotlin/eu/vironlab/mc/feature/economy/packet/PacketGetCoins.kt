@@ -35,12 +35,28 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.economy.packet
 
-interface FeatureRegistry {
+import eu.thesimplecloud.api.CloudAPI
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.vironlab.mc.feature.economy.manager.ManagerPacketCoinsConstant
+import java.util.*
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+class PacketGetCoins() : JsonPacket() {
+
+    constructor(player: UUID): this() {
+        this.jsonLib.append("player", player)
+    }
+
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<Long> {
+        return CloudAPI.instance.getCloudPlayerManager()
+            .getOfflineCloudPlayer(jsonLib.getObject("player", UUID::class.java) ?: return contentException("player"))
+            .then { player ->
+                ManagerPacketCoinsConstant.ecoFeature.getCoins(player)
+            }
+    }
 
 }

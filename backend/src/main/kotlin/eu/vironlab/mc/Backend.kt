@@ -40,19 +40,22 @@ package eu.vironlab.mc
 import eu.thesimplecloud.api.CloudAPI
 import eu.thesimplecloud.api.external.ICloudModule
 import eu.thesimplecloud.launcher.startup.Launcher
-import eu.vironlab.mc.bukkit.BukkitConfiguration
 import eu.vironlab.mc.bukkit.gamemode.GameModeManagerInitializer
 import eu.vironlab.mc.bukkit.menu.manager.PlayerMenuManagerInitializer
 import eu.vironlab.mc.config.BackendMessageConfiguration
 import eu.vironlab.mc.extension.connectionData
+import eu.vironlab.mc.feature.BackendFeatureConfiguration
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
-import eu.vironlab.mc.feature.broadcast.BroadcastCommand
-import eu.vironlab.mc.feature.broadcast.DefaultBroadcastFeature
-import eu.vironlab.mc.feature.economy.DefaultEconomyFeature
+import eu.vironlab.mc.feature.broadcast.ManagerBroadcastFeature
+import eu.vironlab.mc.feature.broadcast.command.BroadcastCommand
+import eu.vironlab.mc.feature.broadcast.manager.DefaultManagerBroadcastFeature
 import eu.vironlab.mc.feature.economy.EconomyCommand
-import eu.vironlab.mc.feature.punishment.DefaultPunishmentFeature
+import eu.vironlab.mc.feature.economy.manager.DefaultManagerEconomyFeature
+import eu.vironlab.mc.feature.help.HelpCommand
+import eu.vironlab.mc.feature.help.HelpFeature
 import eu.vironlab.mc.feature.punishment.PunishmentCommand
-import eu.vironlab.mc.feature.punishment.UnpunishCommand
+import eu.vironlab.mc.feature.punishment.command.UnpunishCommand
+import eu.vironlab.mc.feature.punishment.manager.DefaultManagerPunishmentFeature
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.mc.util.EventUtil
 import eu.vironlab.mc.util.ManagerGlobalEventProvider
@@ -60,9 +63,7 @@ import eu.vironlab.vextension.collection.DataPair
 import eu.vironlab.vextension.database.DatabaseClient
 import eu.vironlab.vextension.database.factory.createDatabaseClient
 import eu.vironlab.vextension.database.mongo.MongoDatabaseClient
-import eu.vironlab.vextension.document.Document
 import eu.vironlab.vextension.document.DocumentFactory
-import eu.vironlab.vextension.document.document
 import eu.vironlab.vextension.document.wrapper.ConfigDocument
 import java.io.File
 import java.nio.file.Files
@@ -72,6 +73,7 @@ class Backend : ICloudModule {
     lateinit var dataFolder: File
     lateinit var config: ConfigDocument
     lateinit var messages: BackendMessageConfiguration
+    lateinit var featureRegistry: DefaultFeatureRegistry
 
     companion object {
         @JvmStatic
@@ -106,14 +108,15 @@ class Backend : ICloudModule {
             // Init Main Config
             val config: ConfigDocument = initConfig()
             val db = initDatabase()
+            this.featureRegistry = DefaultFeatureRegistry()
             CloudUtil.init(
                 db.first,
                 config.getString("prefix")!!,
                 dataFolder.toPath(),
-                DefaultFeatureRegistry(),
+                this.featureRegistry,
             )
-            startFeatures(config.getDocument("features")!!)
-            initBukkit(config.get("features", BukkitConfiguration::class.java)!!)
+            startFeatures(config.get("features", BackendFeatureConfiguration::class.java)!!)
+            initBukkit(config.get("features", BackendFeatureConfiguration::class.java)!!)
             EventUtil.instance = ManagerGlobalEventProvider()
             CloudAPI.instance.getGlobalPropertyHolder().let {
                 it.setProperty<BackendMessageConfiguration>("backendMessageConfig", this.messages)
@@ -127,31 +130,40 @@ class Backend : ICloudModule {
         }
     }
 
-    fun startFeatures(cfg: Document) {
-        cfg.getKeys().forEach {
-            val cfgDir = File(dataFolder, it)
+    fun startFeatures(cfg: BackendFeatureConfiguration) {
+        CloudAPI.instance.getGlobalPropertyHolder().setProperty("features", cfg)
+        cfg.javaClass.declaredFields.forEach {
+            val cfgDir = File(dataFolder, it.name)
             if (!cfgDir.exists()) {
                 Files.createDirectories(cfgDir.toPath())
             }
         }
-        if (cfg.getBoolean("broadcast")!!) {
-            val broadcast = DefaultBroadcastFeature(File(dataFolder, "/broadcast/autobroadcast.json"))
-            Launcher.instance.commandManager.registerCommand(this, BroadcastCommand(broadcast))
+        if (cfg.broadcast) {
+            val broadcast = DefaultManagerBroadcastFeature(File(dataFolder, "/broadcast/autobroadcast.json"))
+            Launcher.instance.commandManager.registerCommand(
+                this,
+                BroadcastCommand(broadcast)
+            )
+            this.featureRegistry.registerFeature(ManagerBroadcastFeature::class.java, broadcast)
         }
-        if (cfg.getBoolean("punishment")!!) {
-            val punish = DefaultPunishmentFeature(CloudUtil, File(dataFolder, "punishment/").also {
+        if (cfg.punishment) {
+            val punish = DefaultManagerPunishmentFeature(CloudUtil, File(dataFolder, "punishment/").also {
                 CloudAPI.instance.getGlobalPropertyHolder().setProperty("punishmentDir", it.absolutePath)
             })
             Launcher.instance.commandManager.registerCommand(this, PunishmentCommand(punish, punish.messages))
             Launcher.instance.commandManager.registerCommand(this, UnpunishCommand(punish, punish.messages))
         }
-        if (cfg.getBoolean("economy")!!) {
-            val eco = DefaultEconomyFeature("coins", File(dataFolder, "economy/"))
+        if (cfg.help) {
+            val feature = HelpFeature(this)
+            Launcher.instance.commandManager.registerCommand(this, HelpCommand(feature))
+        }
+        if (cfg.economy) {
+            val eco = DefaultManagerEconomyFeature("coins", File(dataFolder, "economy/"))
             Launcher.instance.commandManager.registerCommand(this, EconomyCommand(eco, eco.messages))
         }
     }
 
-    fun initBukkit(cfg: BukkitConfiguration) {
+    fun initBukkit(cfg: BackendFeatureConfiguration) {
         if (cfg.playermenu) {
             PlayerMenuManagerInitializer(this)
         }
@@ -171,20 +183,9 @@ class Backend : ICloudModule {
         this.config = ConfigDocument(File(dataFolder, "config.json"))
         config.loadConfig()
 
-        //Features
-        val features = document()
-        features.getBoolean("broadcast", true)
-        features.getBoolean("punishment", true)
-        features.getBoolean("economy", true)
-        val default = BukkitConfiguration()
-        BukkitConfiguration::class.java.declaredFields.filter { it.type == Boolean::class.java }.forEach { field ->
-            field.isAccessible = true
-            features.getBoolean(field.name, field.getBoolean(default))
-        }
-
         config.let {
             it.getString("prefix", "§2§lViron§a§lLab §8| §7")
-            it.getDocument("features", features)
+            it.get("features", BackendFeatureConfiguration::class.java, BackendFeatureConfiguration())
         }
         config.saveConfig()
         return config

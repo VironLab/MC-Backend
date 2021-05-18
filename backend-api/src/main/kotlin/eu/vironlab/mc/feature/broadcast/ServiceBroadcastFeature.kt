@@ -35,12 +35,18 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.service.feature.broadcast
 
-interface FeatureRegistry {
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.vironlab.vextension.document.Document
+import eu.vironlab.vextension.document.document
 
-    fun <T> getFeature(featureClass: Class<T>): T?
+interface ServiceBroadcastFeature {
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+    fun broadcastMessage(message: String): ICommunicationPromise<Unit> {
+        return broadcastMessage(message, document())
+    }
+
+    fun broadcastMessage(message: String, placeholder: Document): ICommunicationPromise<Unit>
 
 }

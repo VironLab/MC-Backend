@@ -35,18 +35,47 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.economy
+package eu.vironlab.mc.feature.chatlog
 
-import eu.thesimplecloud.api.player.IOfflineCloudPlayer
+import com.velocitypowered.api.event.PostOrder
+import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.player.PlayerChatEvent
+import eu.thesimplecloud.base.wrapper.startup.Wrapper
+import eu.thesimplecloud.clientserverapi.lib.packet.IPacket
+import eu.thesimplecloud.clientserverapi.lib.packetresponse.WrappedResponseHandler
+import eu.thesimplecloud.clientserverapi.lib.packetresponse.responsehandler.IPacketResponseHandler
+import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
+import java.util.*
 
-interface EconomyFeature {
 
-    fun getCoins(player: IOfflineCloudPlayer): Long
+class ChatlogProxyListener(val config: ChatlogConfiguration) {
 
-    fun addCoins(coins: Long, player: IOfflineCloudPlayer)
+    val messageCache: MutableMap<UUID, MutableList<String>> = mutableMapOf()
 
-    fun removeCoins(coins: Long, player: IOfflineCloudPlayer)
+    init {
+        Wrapper.instance.communicationClient.getPacketResponseManager()
+            .registerResponseHandler(UUID.randomUUID(), WrappedResponseHandler(
+                object : IPacketResponseHandler<PlayerChatHistory> {
+                    override fun handleResponse(packet: IPacket): PlayerChatHistory? {
+                        TODO("Not yet implemented")
+                    }
+                }, CommunicationPromise<PlayerChatHistory>(0L, false)
+            )
+            )
+    }
 
-    fun setCoins(coins: Long, player: IOfflineCloudPlayer)
+    @Subscribe(order = PostOrder.LATE)
+    fun handleChatMessage(e: PlayerChatEvent) {
+        val messages = messageCache.get(e.player.uniqueId)
+        if (messages == null) {
+            this.messageCache.put(e.player.uniqueId, mutableListOf(e.message))
+            return
+        }
+        while (messages.size >= config.savedMessageCount) {
+            messages.removeFirst()
+        }
+        messages.add(e.message)
+    }
+
 
 }

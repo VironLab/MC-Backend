@@ -23,12 +23,21 @@ class PlayerMenu(val loader: BukkitLoader) {
                 Bukkit.getPlayer(playerId)?.sendMessage("Hello World")
             }
         })
+        it.setItem(15, createItem(Material.NETHER_STAR) {
+            this.setName(messages.mainMenu.lobby)
+            this.setUnbreakable(true)
+            this.setLore(messages.mainMenu.teamLore)
+            this.setBlockAll(true)
+            this.setClickHandler { item, uuid ->
+                CloudAPI.instance.getCloudPlayerManager().getCachedCloudPlayer(uuid)!!.sendToLobby()
+            }
+        })
     }
 
     fun open(player: Player) {
-        mainMenu.open(player.uniqueId) { player ->
+        mainMenu.open(player.uniqueId) { p ->
             setItem(13, createItem(Material.PLAYER_HEAD) {
-                this.skullOwner = Bukkit.getPlayer(player)!!.name
+                this.setSkullOwner(player.name)
                 this.setName(messages.mainMenu.profile)
                 this.setUnbreakable(true)
                 this.setLore(messages.mainMenu.profileLore)
@@ -36,7 +45,7 @@ class PlayerMenu(val loader: BukkitLoader) {
                 this.setClickHandler { item, playerId ->
                     Bukkit.getPlayer(playerId)?.sendMessage("§cComming Soon")
                 }
-            }.also {})
+            })
         }
     }
 

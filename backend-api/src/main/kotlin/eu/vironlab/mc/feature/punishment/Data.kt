@@ -65,6 +65,12 @@ data class PunishReason(
     val ignorePermission: String? = null,
     val permission: String? = null
 ) {
+
+    companion object {
+        @JvmStatic
+        val MAP_TYPE: Type = object : TypeToken<MutableMap<Int, PunishReason>>() {}.type
+    }
+
 }
 
 data class PlayerPunishmentData(val punishments: List<Punishment>) {

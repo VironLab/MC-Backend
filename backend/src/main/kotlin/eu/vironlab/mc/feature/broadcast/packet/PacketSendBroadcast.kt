@@ -35,12 +35,28 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.broadcast.packet
 
-interface FeatureRegistry {
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.thesimplecloud.launcher.startup.Launcher
+import eu.vironlab.mc.feature.broadcast.manager.ManagerPacketBroadcastConstant
+import eu.vironlab.vextension.document.Document
+import eu.vironlab.vextension.document.documentFromJson
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+class PacketSendBroadcast() : JsonPacket() {
 
+    constructor(message: String, placeholder: Document) : this() {
+        this.jsonLib.append("message", message).append("placeholder", placeholder.toJson())
+    }
+
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<Unit> {
+        val message = this.jsonLib.getString("message") ?: return contentException("message")
+        val placeholder = documentFromJson(this.jsonLib.getString("placeholder") ?: return contentException("placeholder"))
+        Launcher.instance.logger.info("Received Broadcast: ${message}")
+        ManagerPacketBroadcastConstant.broadcastFeature.broadcastMessage(message, placeholder)
+        return unit()
+    }
 }

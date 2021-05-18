@@ -35,12 +35,24 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.punishment.packet
 
-interface FeatureRegistry {
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.vironlab.mc.feature.punishment.PunishReason
+import eu.vironlab.mc.feature.punishment.manager.ManagerPacketPunishConstant
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+class PacketGetPunishReason() : JsonPacket() {
 
+    constructor(id: Int) : this() {
+        this.jsonLib.append("id", id)
+    }
+
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<PunishReason> {
+        val id = this.jsonLib.getInt("id") ?: return contentException("id")
+        return CommunicationPromise.ofNullable(ManagerPacketPunishConstant.punishmentFeature.getReason(id), NullPointerException("This reason does not exists"))
+    }
 }

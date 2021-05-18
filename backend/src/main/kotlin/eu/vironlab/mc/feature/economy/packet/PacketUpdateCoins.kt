@@ -35,12 +35,37 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.economy.packet
 
-interface FeatureRegistry {
+import eu.thesimplecloud.api.CloudAPI
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.vironlab.mc.feature.economy.event.CoinUpdateAction
+import eu.vironlab.mc.feature.economy.manager.ManagerPacketCoinsConstant
+import java.util.*
 
-    fun <T> getFeature(featureClass: Class<T>): T?
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+class PacketUpdateCoins() : JsonPacket() {
+
+    constructor(player: UUID, value: Long, action: CoinUpdateAction): this() {
+        this.jsonLib.append("player", player).append("value", value).append("action", action)
+    }
+
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<Unit> {
+        val value = jsonLib.getLong("value") ?: return contentException("value")
+        val action =
+            jsonLib.getObject("action", CoinUpdateAction::class.java) ?: return contentException("action")
+        CloudAPI.instance.getCloudPlayerManager()
+            .getOfflineCloudPlayer(jsonLib.getObject("player", UUID::class.java) ?: return contentException("player"))
+            .then { player ->
+                when (action) {
+                    CoinUpdateAction.SET -> ManagerPacketCoinsConstant.ecoFeature.setCoins(value, player)
+                    CoinUpdateAction.ADD -> ManagerPacketCoinsConstant.ecoFeature.addCoins(value, player)
+                    CoinUpdateAction.REMOVE -> ManagerPacketCoinsConstant.ecoFeature.removeCoins(value, player)
+                }
+            }
+        return unit()
+    }
 
 }

@@ -35,12 +35,7 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.service.feature.chatlog
 
-interface FeatureRegistry {
-
-    fun <T> getFeature(featureClass: Class<T>): T?
-
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
-
+interface ServiceChatlogFeature {
 }

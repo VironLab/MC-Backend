@@ -35,12 +35,17 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.broadcast
 
-interface FeatureRegistry {
+import eu.vironlab.vextension.document.Document
+import eu.vironlab.vextension.document.document
 
-    fun <T> getFeature(featureClass: Class<T>): T?
+interface ManagerBroadcastFeature {
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+    fun broadcastMessage(message: String) {
+        broadcastMessage(message, document())
+    }
+
+    fun broadcastMessage(message: String, placeholder: Document)
 
 }

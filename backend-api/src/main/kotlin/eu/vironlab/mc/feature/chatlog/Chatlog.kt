@@ -35,17 +35,8 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.broadcast
+package eu.vironlab.mc.manager.feature.chatlog
 
-import eu.vironlab.vextension.document.Document
-import eu.vironlab.vextension.document.document
+import java.util.*
 
-interface BroadcastFeature {
-
-    fun broadcastMessage(message: String) {
-        broadcastMessage(message, document())
-    }
-
-    fun broadcastMessage(message: String, placeholder: Document)
-
-}
+data class Chatlog(val id: String, val messages: MutableList<String>, val player: UUID)

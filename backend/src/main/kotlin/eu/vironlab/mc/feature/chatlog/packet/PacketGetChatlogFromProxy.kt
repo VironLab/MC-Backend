@@ -35,31 +35,15 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.broadcast
+package eu.vironlab.mc.feature.chatlog.packet
 
-import eu.thesimplecloud.api.CloudAPI
-import eu.thesimplecloud.api.command.ICommandSender
-import eu.thesimplecloud.launcher.console.command.CommandType
-import eu.thesimplecloud.launcher.console.command.ICommandHandler
-import eu.thesimplecloud.launcher.console.command.annotations.Command
-import eu.thesimplecloud.launcher.console.command.annotations.CommandSubPath
-import eu.vironlab.mc.extension.replaceColor
-import eu.vironlab.mc.util.CloudUtil
-import eu.vironlab.vextension.extension.toCleanString
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
 
-@Command("broadcast", CommandType.INGAME, "backend.broadcast", ["bc", "alert"])
-class BroadcastCommand(val feature: DefaultBroadcastFeature) : ICommandHandler {
-
-    @CommandSubPath
-    fun broadcast(sender: ICommandSender, args: Array<String>) {
-        if (args.isEmpty()) {
-            sender.sendMessage(CloudUtil.prefix + feature.commandUsage)
-            return
-        }
-        val message = feature.format.replace("%message%", args.toCleanString().replaceColor())
-        CloudAPI.instance.getCloudPlayerManager().getAllOnlinePlayers().getBlocking().forEach { player ->
-            player.getCloudPlayer().getBlocking().sendMessage(message)
-        }
+class PacketGetChatlogFromProxy() : JsonPacket() {
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<Any> {
+        TODO("Not yet implemented")
     }
 
 }

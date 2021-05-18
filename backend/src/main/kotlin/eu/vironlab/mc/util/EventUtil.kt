@@ -16,10 +16,6 @@ object EventUtil {
 
     fun callGlobal(event: ISynchronizedEvent) = instance.call(event)
 
-    private fun initMessageChannel() {
-
-    }
-
 }
 
 interface GlobalEventProvider {
@@ -34,6 +30,7 @@ class ManagerGlobalEventProvider() : GlobalEventProvider {
             "backendEventChannel",
             EventChannel::class.java
         )
+
 
     init {
         channel.registerListener(object: IMessageListener<EventChannel> {

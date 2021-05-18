@@ -35,12 +35,26 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.punishment
 
-interface FeatureRegistry {
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import java.util.*
 
-    fun <T> getFeature(featureClass: Class<T>): T?
+interface ServicePunishmentFeature {
+    fun getKickMessage(reason: String): String
 
-    fun <T, E : T>registerFeature(featureClass: Class<T>, impl: E): E
+    fun getBanMessage(punishment: Punishment): String
 
+    fun updatePunishments(player: UUID, data: PlayerPunishmentData): ICommunicationPromise<Unit>
+
+    fun getMuteMessage(punishment: Punishment): String
+
+    fun getReasons(): ICommunicationPromise<MutableMap<Int, PunishReason>>
+
+    fun getReason(id: Int): ICommunicationPromise<PunishReason>
+
+    fun getPunishments(player: UUID): ICommunicationPromise<PlayerPunishmentData>
+
+    fun addPunishment(reasonID: Int, executor: String, player: UUID): ICommunicationPromise<String>
+    
 }
