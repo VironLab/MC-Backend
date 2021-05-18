@@ -35,27 +35,44 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.chatlog.packet
+package eu.vironlab.mc.feature.chatlog.service.listener
 
-import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
-import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
-import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
-import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
-import eu.thesimplecloud.jsonlib.JsonLib
+import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.connection.DisconnectEvent
+import com.velocitypowered.api.event.connection.LoginEvent
+import com.velocitypowered.api.event.player.PlayerChatEvent
+import eu.thesimplecloud.plugin.startup.CloudPlugin
+import eu.vironlab.mc.feature.chatlog.ChatlogConfiguration
 import eu.vironlab.mc.feature.chatlog.PlayerChatHistory
-import eu.vironlab.mc.feature.chatlog.service.ServicePacketChatlogConstant
-import java.util.*
+import eu.vironlab.mc.feature.chatlog.packet.PacketCacheDisconnectedPlayerMessages
+import eu.vironlab.mc.feature.chatlog.packet.PacketGetDisconnectedPlayerCache
 
-class PacketGetChatlogFromProxy() : JsonPacket() {
 
-    constructor(player: UUID): this() {
-        this.jsonLib = JsonLib.Companion.fromObject(player)
+class ChatlogProxyListener(config: ChatlogConfiguration) : AbstractChatlogProxyListener(config) {
+
+    @Subscribe
+    fun handleChat(e: PlayerChatEvent) {
+        handle(e.message, e.player.uniqueId)
     }
 
-    override suspend fun handle(connection: IConnection): ICommunicationPromise<PlayerChatHistory> {
-        val uuid = jsonLib.getObject(UUID::class.java)
-        val playerData = ServicePacketChatlogConstant.chatlogListener.messageCache[uuid] ?: throw IllegalStateException("Cannot get Chatlog of invalid UUID")
-        return CommunicationPromise.of(PlayerChatHistory(uuid, playerData))
+    @Subscribe
+    fun handleJoin(e: LoginEvent) {
+        this.messageCache[e.player.uniqueId] = CloudPlugin.instance.connectionToManager.sendQuery(
+            PacketGetDisconnectedPlayerCache(e.player.uniqueId),
+            PlayerChatHistory::class.java
+        ).getBlocking().messages
+    }
+
+    @Subscribe
+    fun handleQuit(e: DisconnectEvent) {
+        CloudPlugin.instance.connectionToManager.sendUnitQuery(
+            PacketCacheDisconnectedPlayerMessages(
+                PlayerChatHistory(
+                    e.player.uniqueId,
+                    this.messageCache.remove(e.player.uniqueId)!!
+                )
+            )
+        )
     }
 
 }

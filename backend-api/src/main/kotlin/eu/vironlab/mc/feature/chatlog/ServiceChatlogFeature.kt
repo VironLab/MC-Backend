@@ -35,7 +35,15 @@
  *<p>
  */
 
-package eu.vironlab.mc.service.feature.chatlog
+package eu.vironlab.mc.feature.chatlog
+
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import java.util.*
 
 interface ServiceChatlogFeature {
+
+    fun createChatlog(player: UUID): ICommunicationPromise<Chatlog>
+
+    fun getChatlog(id: String): ICommunicationPromise<Chatlog>
+
 }

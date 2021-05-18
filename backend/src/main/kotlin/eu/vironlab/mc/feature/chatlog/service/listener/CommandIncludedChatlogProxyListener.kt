@@ -35,47 +35,51 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.chatlog
+package eu.vironlab.mc.feature.chatlog.service.listener
 
-import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.connection.DisconnectEvent
+import com.velocitypowered.api.event.connection.LoginEvent
 import com.velocitypowered.api.event.player.PlayerChatEvent
-import eu.thesimplecloud.base.wrapper.startup.Wrapper
-import eu.thesimplecloud.clientserverapi.lib.packet.IPacket
-import eu.thesimplecloud.clientserverapi.lib.packetresponse.WrappedResponseHandler
-import eu.thesimplecloud.clientserverapi.lib.packetresponse.responsehandler.IPacketResponseHandler
-import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
-import java.util.*
+import eu.thesimplecloud.plugin.startup.CloudPlugin
+import eu.vironlab.mc.feature.chatlog.ChatlogConfiguration
+import eu.vironlab.mc.feature.chatlog.PlayerChatHistory
+import eu.vironlab.mc.feature.chatlog.packet.PacketCacheDisconnectedPlayerMessages
+import eu.vironlab.mc.feature.chatlog.packet.PacketGetDisconnectedPlayerCache
+import eu.vironlab.vextension.extension.toCleanString
+import org.bukkit.event.player.PlayerCommandSendEvent
 
 
-class ChatlogProxyListener(val config: ChatlogConfiguration) {
+class CommandIncludedChatlogProxyListener(config: ChatlogConfiguration) : AbstractChatlogProxyListener(config) {
 
-    val messageCache: MutableMap<UUID, MutableList<String>> = mutableMapOf()
-
-    init {
-        Wrapper.instance.communicationClient.getPacketResponseManager()
-            .registerResponseHandler(UUID.randomUUID(), WrappedResponseHandler(
-                object : IPacketResponseHandler<PlayerChatHistory> {
-                    override fun handleResponse(packet: IPacket): PlayerChatHistory? {
-                        TODO("Not yet implemented")
-                    }
-                }, CommunicationPromise<PlayerChatHistory>(0L, false)
-            )
-            )
+    @Subscribe
+    fun handleChat(e: PlayerChatEvent) {
+        handle(e.message, e.player.uniqueId)
     }
 
-    @Subscribe(order = PostOrder.LATE)
-    fun handleChatMessage(e: PlayerChatEvent) {
-        val messages = messageCache.get(e.player.uniqueId)
-        if (messages == null) {
-            this.messageCache.put(e.player.uniqueId, mutableListOf(e.message))
-            return
-        }
-        while (messages.size >= config.savedMessageCount) {
-            messages.removeFirst()
-        }
-        messages.add(e.message)
+    @Subscribe
+    fun handleCommand(e: PlayerCommandSendEvent) {
+        handle(e.commands.toTypedArray().toCleanString(true), e.player.uniqueId)
     }
 
+    @Subscribe
+    fun handleJoin(e: LoginEvent) {
+        this.messageCache[e.player.uniqueId] = CloudPlugin.instance.connectionToManager.sendQuery(
+            PacketGetDisconnectedPlayerCache(e.player.uniqueId),
+            PlayerChatHistory::class.java
+        ).getBlocking().messages
+    }
+
+    @Subscribe
+    fun handleQuit(e: DisconnectEvent) {
+        CloudPlugin.instance.connectionToManager.sendUnitQuery(
+            PacketCacheDisconnectedPlayerMessages(
+                PlayerChatHistory(
+                    e.player.uniqueId,
+                    this.messageCache.remove(e.player.uniqueId)!!
+                )
+            )
+        )
+    }
 
 }

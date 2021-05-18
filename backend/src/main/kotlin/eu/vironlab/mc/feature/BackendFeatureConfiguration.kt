@@ -45,4 +45,5 @@ class BackendFeatureConfiguration {
     val punishment = true
     val economy = true
     val help = true
+    val chatlog = true
 }

@@ -35,8 +35,15 @@
  *<p>
  */
 
-package eu.vironlab.mc.manager.feature.chatlog
+package eu.vironlab.mc.feature.chatlog
 
+import com.google.gson.reflect.TypeToken
+import java.lang.reflect.Type
 import java.util.*
 
-data class Chatlog(val id: String, val messages: MutableList<String>, val player: UUID)
+data class Chatlog(val id: String, val player: UUID, val messages: MutableList<String>) {
+    companion object {
+        @JvmStatic
+        val TYPE: Type = object : TypeToken<Chatlog>() {}.type
+    }
+}

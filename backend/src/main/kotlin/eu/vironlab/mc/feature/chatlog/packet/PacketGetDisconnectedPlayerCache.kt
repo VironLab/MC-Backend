@@ -41,21 +41,24 @@ import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
 import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
 import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
 import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
-import eu.thesimplecloud.jsonlib.JsonLib
 import eu.vironlab.mc.feature.chatlog.PlayerChatHistory
-import eu.vironlab.mc.feature.chatlog.service.ServicePacketChatlogConstant
+import eu.vironlab.mc.feature.chatlog.manager.ManagerPacketChatlogConstant
 import java.util.*
 
-class PacketGetChatlogFromProxy() : JsonPacket() {
 
-    constructor(player: UUID): this() {
-        this.jsonLib = JsonLib.Companion.fromObject(player)
+class PacketGetDisconnectedPlayerCache() : JsonPacket() {
+
+    constructor(player: UUID) : this() {
+        this.jsonLib.append("player", player)
     }
 
     override suspend fun handle(connection: IConnection): ICommunicationPromise<PlayerChatHistory> {
-        val uuid = jsonLib.getObject(UUID::class.java)
-        val playerData = ServicePacketChatlogConstant.chatlogListener.messageCache[uuid] ?: throw IllegalStateException("Cannot get Chatlog of invalid UUID")
-        return CommunicationPromise.of(PlayerChatHistory(uuid, playerData))
+        val uuid = jsonLib.getObject("player", UUID::class.java) ?: return contentException("player")
+        return CommunicationPromise.of(
+            PlayerChatHistory(
+                uuid,
+                ManagerPacketChatlogConstant.chatlogFeature.getDisconnectedPlayerCacheData(uuid)
+            )
+        )
     }
-
 }

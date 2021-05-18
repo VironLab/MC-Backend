@@ -35,37 +35,18 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.chatlog
+package eu.vironlab.mc.feature.chatlog.packet
 
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
 import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
-import eu.vironlab.mc.Backend
-import eu.vironlab.mc.manager.feature.chatlog.Chatlog
-import eu.vironlab.vextension.document.wrapper.ConfigDocument
-import java.io.File
-import java.util.*
+import eu.vironlab.mc.feature.chatlog.ChatlogConfiguration
+import eu.vironlab.mc.feature.chatlog.manager.ManagerPacketChatlogConstant
 
 
-class DefaultManagerChatlogFeature(val backend: Backend) : ChatlogFeature {
-
-    val chatLogMessages: ChatlogMessageConfiguration
-    val config: ChatlogConfiguration
-    val packetId = UUID.randomUUID()
-
-    init {
-        this.chatLogMessages = ConfigDocument(File(backend.dataFolder, "chatlog/messages.json")).let {
-            it.saveConfig()
-            it.get("messages", ChatlogMessageConfiguration::class.java, ChatlogMessageConfiguration())
-                .also { itt -> it.saveConfig() }
-        }
-        this.config = ConfigDocument(File(backend.dataFolder, "chatlog/config.json")).let {
-            it.saveConfig()
-            it.get("chatlogConfig", ChatlogConfiguration::class.java, ChatlogConfiguration())
-                .also { itt -> it.saveConfig() }
-        }
+class PacketGetChatlogConfiguration() : JsonPacket() {
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<ChatlogConfiguration> {
+        return CommunicationPromise.of(ManagerPacketChatlogConstant.chatlogFeature.config)
     }
-
-    override fun createChatlog(player: UUID): ICommunicationPromise<Chatlog> {
-        TODO("ad")
-    }
-
 }

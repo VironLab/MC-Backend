@@ -42,6 +42,8 @@ import java.util.*
 
 interface ChatlogFeature {
 
-    fun createChatlog(player: UUID): ICommunicationPromise<eu.vironlab.mc.manager.feature.chatlog.Chatlog>
+    fun createChatlog(player: UUID): Chatlog
+
+    fun getChatlog(id: String): Chatlog?
 
 }

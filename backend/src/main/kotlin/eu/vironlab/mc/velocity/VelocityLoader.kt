@@ -42,9 +42,14 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import eu.thesimplecloud.api.CloudAPI
+import eu.thesimplecloud.plugin.startup.CloudPlugin
 import eu.vironlab.mc.VextensionDownloader
 import eu.vironlab.mc.extension.initOnService
 import eu.vironlab.mc.feature.BackendFeatureConfiguration
+import eu.vironlab.mc.feature.chatlog.ChatlogConfiguration
+import eu.vironlab.mc.feature.chatlog.packet.PacketGetChatlogConfiguration
+import eu.vironlab.mc.feature.chatlog.service.listener.ChatlogProxyListener
+import eu.vironlab.mc.feature.chatlog.service.listener.CommandIncludedChatlogProxyListener
 import eu.vironlab.mc.feature.punishment.ServicePunishmentFeature
 import eu.vironlab.mc.feature.punishment.service.listener.PunishmentListener
 import eu.vironlab.mc.util.CloudUtil
@@ -79,6 +84,18 @@ class VelocityLoader @Inject constructor(val server: ProxyServer, val logger: Lo
                 server.eventManager.register(this, punishListener)
                 CloudAPI.instance.getEventManager()
                     .registerListener(CloudAPI.instance.getThisSidesCloudModule(), punishListener)
+            }
+        }
+        if (featureConfig.chatlog) {
+            CloudPlugin.instance.connectionToManager.sendQuery(
+                PacketGetChatlogConfiguration(),
+                ChatlogConfiguration::class.java
+            ).then {
+                if (it.includeCommands) {
+                    server.eventManager.register(this, CommandIncludedChatlogProxyListener(it))
+                } else {
+                    server.eventManager.register(this, ChatlogProxyListener(it))
+                }
             }
         }
     }

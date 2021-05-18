@@ -41,6 +41,8 @@ import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.feature.BackendFeatureConfiguration
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
 import eu.vironlab.mc.feature.broadcast.service.DefaultServiceBroadcastFeature
+import eu.vironlab.mc.feature.chatlog.ServiceChatlogFeature
+import eu.vironlab.mc.feature.chatlog.service.DefaultServiceChatlogFeature
 import eu.vironlab.mc.feature.economy.ServiceEconomyFeature
 import eu.vironlab.mc.feature.economy.service.DefaultServiceEconomyFeature
 import eu.vironlab.mc.feature.punishment.ServicePunishmentFeature
@@ -84,6 +86,9 @@ fun CloudUtil.initOnService(featureConfig: BackendFeatureConfiguration) {
             }
             if (featureConfig.broadcast) {
                 it.registerFeature(ServiceBroadcastFeature::class.java, DefaultServiceBroadcastFeature())
+            }
+            if (featureConfig.chatlog) {
+                it.registerFeature(ServiceChatlogFeature::class.java, DefaultServiceChatlogFeature())
             }
         }
     } catch (e: Exception) {

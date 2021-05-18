@@ -35,27 +35,34 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.chatlog.packet
+package eu.vironlab.mc.feature.chatlog.service.listener
 
-import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
-import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
-import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
-import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
-import eu.thesimplecloud.jsonlib.JsonLib
-import eu.vironlab.mc.feature.chatlog.PlayerChatHistory
+import eu.thesimplecloud.plugin.startup.CloudPlugin
+import eu.vironlab.mc.feature.chatlog.ChatlogConfiguration
+import eu.vironlab.mc.feature.chatlog.packet.PacketGetChatlogFromProxy
 import eu.vironlab.mc.feature.chatlog.service.ServicePacketChatlogConstant
 import java.util.*
 
-class PacketGetChatlogFromProxy() : JsonPacket() {
 
-    constructor(player: UUID): this() {
-        this.jsonLib = JsonLib.Companion.fromObject(player)
+abstract class AbstractChatlogProxyListener(val config: ChatlogConfiguration) {
+
+    val messageCache: MutableMap<UUID, MutableList<String>> = mutableMapOf()
+
+    init {
+        CloudPlugin.instance.communicationClient.getPacketManager().registerPacket(PacketGetChatlogFromProxy::class.java)
+        ServicePacketChatlogConstant.chatlogListener = this
     }
 
-    override suspend fun handle(connection: IConnection): ICommunicationPromise<PlayerChatHistory> {
-        val uuid = jsonLib.getObject(UUID::class.java)
-        val playerData = ServicePacketChatlogConstant.chatlogListener.messageCache[uuid] ?: throw IllegalStateException("Cannot get Chatlog of invalid UUID")
-        return CommunicationPromise.of(PlayerChatHistory(uuid, playerData))
+    fun handle(message: String, player: UUID) {
+        val messages = messageCache[player]
+        if (messages == null) {
+            this.messageCache[player] = mutableListOf(message)
+            return
+        }
+        while (messages.size >= config.savedMessageCount) {
+            messages.removeFirst()
+        }
+        messages.add(message)
     }
 
 }

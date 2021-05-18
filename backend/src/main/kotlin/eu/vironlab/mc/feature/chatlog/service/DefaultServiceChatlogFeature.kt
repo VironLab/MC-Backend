@@ -35,27 +35,23 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature.chatlog.packet
+package eu.vironlab.mc.feature.chatlog.service
 
-import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
-import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
-import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
 import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
-import eu.thesimplecloud.jsonlib.JsonLib
-import eu.vironlab.mc.feature.chatlog.PlayerChatHistory
-import eu.vironlab.mc.feature.chatlog.service.ServicePacketChatlogConstant
+import eu.thesimplecloud.plugin.startup.CloudPlugin
+import eu.vironlab.mc.feature.chatlog.Chatlog
+import eu.vironlab.mc.feature.chatlog.ServiceChatlogFeature
+import eu.vironlab.mc.feature.chatlog.packet.PacketCreateChatlog
 import java.util.*
 
-class PacketGetChatlogFromProxy() : JsonPacket() {
 
-    constructor(player: UUID): this() {
-        this.jsonLib = JsonLib.Companion.fromObject(player)
+class DefaultServiceChatlogFeature : ServiceChatlogFeature {
+    override fun createChatlog(player: UUID): ICommunicationPromise<Chatlog> {
+        return CloudPlugin.instance.connectionToManager.sendQuery(PacketCreateChatlog(player), Chatlog::class.java)
     }
 
-    override suspend fun handle(connection: IConnection): ICommunicationPromise<PlayerChatHistory> {
-        val uuid = jsonLib.getObject(UUID::class.java)
-        val playerData = ServicePacketChatlogConstant.chatlogListener.messageCache[uuid] ?: throw IllegalStateException("Cannot get Chatlog of invalid UUID")
-        return CommunicationPromise.of(PlayerChatHistory(uuid, playerData))
+    override fun getChatlog(id: String): ICommunicationPromise<Chatlog> {
+        TODO("Not yet implemented")
     }
 
 }
