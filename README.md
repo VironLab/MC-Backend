@@ -6,43 +6,9 @@
 
 ### Project description
 
-Vextension JVM Utility v2.0.0-SNAPSHOT
-
-This version brings breaking changes to Version 1
+This Project is Part of our Open Source Minecraft Network
 
 ---
-
-## Maven Dependency
-
-```gradle
-
-//Repository - Groovy
-maven {
-    name = "vironlab"
-    url = "https://repo.vironlab.eu/repository/maven-snapshot/"
-}
-
-//Repository - Kotlin DSL
-maven("https://repo.vironlab.eu/repository/maven-snapshot/")
-
-//Dependency - Common
-compileOnly("eu.vironlab.vextension:vextension-common:2.0.0-SNAPSHOT")
-
-//Dependency - Discord
-compileOnly("eu.vironlab.vextension:vextension-discord:2.0.0-SNAPSHOT")
-
-//Dependency - Minecraft - Server
-compileOnly("eu.vironlab.vextension:vextension-minecraft-server:2.0.0-SNAPSHOT")
-
-//Dependency - Minecraft - Proxy
-compileOnly("eu.vironlab.vextension:vextension-minecraft-proxy:2.0.0-SNAPSHOT")
-```
-
-## Modules
-
-### Common
-
-The common Module includes all Utils required for the other Modules and some things for your Project
 
 ### Discord
 
