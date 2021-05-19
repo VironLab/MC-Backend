@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 [![Discord](https://img.shields.io/discord/785956343407181824.svg)](https://discord.gg/wvcX92VyEH)
-[![Build Status](https://ci.vironlab.eu/job/Vextension/badge/icon)](https://ci.vironlab.eu/job/Vextension/)
+[![Build Status](https://ci.vironlab.eu/job/MC-Backend/badge/icon)](https://ci.vironlab.eu/job/MC-Backend/)
 
 ### Project description
 
