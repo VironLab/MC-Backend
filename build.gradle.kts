@@ -23,7 +23,7 @@ plugins {
 
 //Configure build of docs
 tasks.dokkaHtmlMultiModule.configure {
-    outputDirectory.set(File(rootProject.buildDir.path, "vironlab-backend"))
+    outputDirectory.set(File(rootProject.buildDir.path, "backend-v1.0.0"))
 }
 
 //Define Variables for all Projects

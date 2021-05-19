@@ -30,7 +30,6 @@ pipeline {
         stage("Docs") {
             steps {
                 sh "./gradlew dokkaHtmlMultiModule";
-                sh "rm -r /var/www/docs/backend-v1.0.0"
                 sh "mkdir /var/www/docs/backend-v1.0.0"
                 sh "cp -r build/backend-v1.0.0 /var/www/docs/"
             }
