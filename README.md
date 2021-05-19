@@ -6,7 +6,27 @@
 
 ### Project description
 
-This Project is Part of our Open Source Minecraft Network
+This Project is the Backend/ProxySystem of our Open Source Minecraft Network
+
+---
+
+### Features
+
+    - Punishment
+    - Chatlog
+    - Help
+    - Broadcast
+    - Economy
+    - Better Gamemode Command
+    - All messages configurable
+    - Database Management
+
+### Comming Features
+
+    - Report
+    - Replay
+    - Prefix
+    - Ingame GUI
 
 ---
 
