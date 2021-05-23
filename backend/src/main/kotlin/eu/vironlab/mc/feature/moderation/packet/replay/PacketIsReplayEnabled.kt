@@ -2,14 +2,14 @@
  *   Copyright © 2020 | vironlab.eu | All Rights Reserved.<p>
  * <p>
  *      ___    _______                        ______         ______  <p>
- *      __ |  / /___(_______________ _______ ___  / ______ ____  /_ <p>
+ *      __ |  / /___(_)______________ _______ ___  / ______ ____  /_ <p>
  *      __ | / / __  / __  ___/_  __ \__  __ \__  /  _  __ `/__  __ \<p>
  *      __ |/ /  _  /  _  /    / /_/ /_  / / /_  /___/ /_/ / _  /_/ /<p>
  *      _____/   /_/   /_/     \____/ /_/ /_/ /_____/\__,_/  /_.___/ <p>
  *<p>
  *    ____  _______     _______ _     ___  ____  __  __ _____ _   _ _____ <p>
  *   |  _ \| ____\ \   / / ____| |   / _ \|  _ \|  \/  | ____| \ | |_   _|<p>
- *   | | | |  _|  \ \ / /|  _| | |  | | | | |_ | |\/| |  _| |  \| | | |  <p>
+ *   | | | |  _|  \ \ / /|  _| | |  | | | | |_) | |\/| |  _| |  \| | | |  <p>
  *   | |_| | |___  \ V / | |___| |__| |_| |  __/| |  | | |___| |\  | | |  <p>
  *   |____/|_____|  \_/  |_____|_____\___/|_|   |_|  |_|_____|_| \_| |_|  <p>
  *<p>
@@ -17,7 +17,7 @@
  *   This program is free software: you can redistribute it and/or modify<p>
  *   it under the terms of the GNU General Public License as published by<p>
  *   the Free Software Foundation, either version 3 of the License, or<p>
- *   (at your option any later version.<p>
+ *   (at your option) any later version.<p>
  *<p>
  *   This program is distributed in the hope that it will be useful,<p>
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of<p>
@@ -35,14 +35,33 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.moderation.packet.replay
+
+import eu.thesimplecloud.api.CloudAPI
+import eu.thesimplecloud.base.manager.startup.Manager
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.CommunicationPromise
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.thesimplecloud.jsonlib.JsonLib
+import eu.vironlab.mc.extension.BooleanConfiguration
+import eu.vironlab.mc.extension.toConfig
+import eu.vironlab.mc.feature.moderation.manager.ManagerPacketModerationConstant
+import java.util.*
 
 
-class BackendFeatureConfiguration {
-    val playermenu: Boolean = true
-    val gamemode: Boolean = true
-    val broadcast = true
-    val moderation = true
-    val economy = true
-    val help = true
+class PacketIsReplayEnabled() : JsonPacket() {
+
+    constructor(groupName: String) : this() {
+        this.jsonLib = JsonLib.Companion.fromObject(groupName)
+    }
+
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<BooleanConfiguration> {
+        val id = jsonLib.getObject(String::class.java)
+        return CommunicationPromise.of(
+            ManagerPacketModerationConstant.moderationFeature.config.replay.replayExcludedServerGroups.contains(
+                id
+            ).toConfig()
+        )
+    }
 }

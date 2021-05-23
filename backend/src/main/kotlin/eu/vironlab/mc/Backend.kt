@@ -53,9 +53,9 @@ import eu.vironlab.mc.feature.economy.EconomyCommand
 import eu.vironlab.mc.feature.economy.manager.DefaultManagerEconomyFeature
 import eu.vironlab.mc.feature.help.HelpCommand
 import eu.vironlab.mc.feature.help.HelpFeature
-import eu.vironlab.mc.feature.punishment.PunishmentCommand
-import eu.vironlab.mc.feature.punishment.command.UnpunishCommand
-import eu.vironlab.mc.feature.punishment.manager.DefaultManagerPunishmentFeature
+import eu.vironlab.mc.feature.moderation.PunishmentCommand
+import eu.vironlab.mc.feature.moderation.command.UnpunishCommand
+import eu.vironlab.mc.feature.moderation.manager.DefaultManagerModerationFeature
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.mc.util.EventUtil
 import eu.vironlab.mc.util.ManagerGlobalEventProvider
@@ -146,10 +146,8 @@ class Backend : ICloudModule {
             )
             this.featureRegistry.registerFeature(ManagerBroadcastFeature::class.java, broadcast)
         }
-        if (cfg.punishment) {
-            val punish = DefaultManagerPunishmentFeature(CloudUtil, File(dataFolder, "punishment/").also {
-                CloudAPI.instance.getGlobalPropertyHolder().setProperty("punishmentDir", it.absolutePath)
-            })
+        if (cfg.moderation) {
+            val punish = DefaultManagerModerationFeature(CloudUtil, File(dataFolder, "moderation/"))
             Launcher.instance.commandManager.registerCommand(this, PunishmentCommand(punish, punish.messages))
             Launcher.instance.commandManager.registerCommand(this, UnpunishCommand(punish, punish.messages))
         }

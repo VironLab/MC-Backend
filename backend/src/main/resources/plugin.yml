@@ -5,9 +5,11 @@ author: Infinity_dev
 depend:
   - SimpleCloud-Plugin
   - SimpleCloud-Permission
+  - ProtocolLib
 loadbefore:
   - SimpleCloud-Plugin
   - SimpleCloud-Permission
+  - ProtocolLib
 commands:
   menu:
     usage: menu

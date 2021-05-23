@@ -38,14 +38,19 @@
 package eu.vironlab.mc.bukkit
 
 import eu.thesimplecloud.api.CloudAPI
+import eu.thesimplecloud.plugin.startup.CloudPlugin
 import eu.vironlab.mc.VextensionDownloader
 import eu.vironlab.mc.bukkit.gamemode.GameModeMessageConfiguration
 import eu.vironlab.mc.bukkit.gamemode.GamemodeCommand
 import eu.vironlab.mc.bukkit.menu.PlayerMenu
 import eu.vironlab.mc.bukkit.menu.PlayerMenuListenerCommand
+import eu.vironlab.mc.bukkit.replay.ReplaySaver
 import eu.vironlab.mc.config.BackendMessageConfiguration
+import eu.vironlab.mc.extension.BooleanConfiguration
 import eu.vironlab.mc.extension.initOnService
 import eu.vironlab.mc.feature.BackendFeatureConfiguration
+import eu.vironlab.mc.feature.moderation.packet.replay.PacketIsReplayEnabled
+import eu.vironlab.mc.feature.moderation.packet.replay.PacketIsReplayService
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.vextension.bukkit.VextensionBukkit
 import eu.vironlab.vextension.item.bukkit.BukkitItemEventConsumer
@@ -60,15 +65,43 @@ class BukkitLoader : JavaPlugin() {
     lateinit var cloudUtil: CloudUtil
     lateinit var featureConfiguration: BackendFeatureConfiguration
     lateinit var backendMessages: BackendMessageConfiguration
+    lateinit var backendDataFolder: File
+    var replaySaver: ReplaySaver? = null
 
     override fun onEnable() {
-        val featureConfig = CloudAPI.instance.getGlobalPropertyHolder().requestProperty<BackendFeatureConfiguration>("features")
-            .getBlocking().getValue()
+        val featureConfig =
+            CloudAPI.instance.getGlobalPropertyHolder().requestProperty<BackendFeatureConfiguration>("features")
+                .getBlocking().getValue()
         CloudUtil.initOnService(featureConfig)
+        this.backendDataFolder = File(
+            URI(
+                CloudAPI.instance.getGlobalPropertyHolder().requestProperty<String>("dataFolder").getBlocking()
+                    .getValue()
+            )
+        )
         logger.info("Loaded Vextension by VironLab: https://github.com/VironLab/Vextension")
         Bukkit.getPluginManager().registerEvents(BukkitItemEventConsumer(), this)
         this.backendMessages = CloudAPI.instance.getGlobalPropertyHolder()
             .requestProperty<BackendMessageConfiguration>("backendMessageConfig").getBlocking().getValue()
+        if (featureConfig.moderation) {
+            val isReplayService = CloudPlugin.instance.connectionToManager.sendQuery(
+                PacketIsReplayService(
+                    CloudPlugin.instance.thisService().getUniqueId()
+                ), BooleanConfiguration::class.java
+            ).getBlocking().value
+            if (isReplayService) {
+                TODO("Start to Load and Play Replay")
+            } else {
+                val isReplayExcludedGroup = CloudPlugin.instance.connectionToManager.sendQuery(
+                    PacketIsReplayEnabled(
+                        CloudPlugin.instance.thisService().getGroupName()
+                    ), BooleanConfiguration::class.java
+                ).getBlocking().value
+                if (!isReplayExcludedGroup) {
+                    this.replaySaver = ReplaySaver(this)
+                }
+            }
+        }
         if (featureConfig.playermenu) {
             val menu = PlayerMenu(this)
             val menuListener = PlayerMenuListenerCommand(menu)
@@ -84,6 +117,10 @@ class BukkitLoader : JavaPlugin() {
                 )
             )
         }
+    }
+
+    override fun onDisable() {
+        this.replaySaver?.stop()
     }
 
     override fun onLoad() {

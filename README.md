@@ -21,10 +21,13 @@ This Project is the Backend/ProxySystem of our Open Source Minecraft Network
     - All messages configurable
     - Database Management
 
-### Comming Features
+### In Progress
 
     - Report
     - Replay
+
+### Comming Features
+
     - Prefix
     - Ingame GUI
 

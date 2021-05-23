@@ -41,12 +41,10 @@ import eu.thesimplecloud.api.CloudAPI
 import eu.vironlab.mc.feature.BackendFeatureConfiguration
 import eu.vironlab.mc.feature.DefaultFeatureRegistry
 import eu.vironlab.mc.feature.broadcast.service.DefaultServiceBroadcastFeature
-import eu.vironlab.mc.feature.chatlog.ServiceChatlogFeature
-import eu.vironlab.mc.feature.chatlog.service.DefaultServiceChatlogFeature
 import eu.vironlab.mc.feature.economy.ServiceEconomyFeature
 import eu.vironlab.mc.feature.economy.service.DefaultServiceEconomyFeature
-import eu.vironlab.mc.feature.punishment.ServicePunishmentFeature
-import eu.vironlab.mc.feature.punishment.service.DefaultServicePunishmentFeature
+import eu.vironlab.mc.feature.moderation.ServiceModerationFeature
+import eu.vironlab.mc.feature.moderation.service.DefaultServiceModerationFeature
 import eu.vironlab.mc.service.feature.broadcast.ServiceBroadcastFeature
 import eu.vironlab.mc.util.CloudUtil
 import eu.vironlab.mc.util.EventUtil
@@ -78,17 +76,14 @@ fun CloudUtil.initOnService(featureConfig: BackendFeatureConfiguration) {
                 ).connectionData()
         }.also { it.init() }
         this.featureRegistry = DefaultFeatureRegistry().also {
-            if (featureConfig.punishment) {
-                it.registerFeature(ServicePunishmentFeature::class.java, DefaultServicePunishmentFeature())
+            if (featureConfig.moderation) {
+                it.registerFeature(ServiceModerationFeature::class.java, DefaultServiceModerationFeature())
             }
             if (featureConfig.economy) {
                 it.registerFeature(ServiceEconomyFeature::class.java, DefaultServiceEconomyFeature())
             }
             if (featureConfig.broadcast) {
                 it.registerFeature(ServiceBroadcastFeature::class.java, DefaultServiceBroadcastFeature())
-            }
-            if (featureConfig.chatlog) {
-                it.registerFeature(ServiceChatlogFeature::class.java, DefaultServiceChatlogFeature())
             }
         }
     } catch (e: Exception) {

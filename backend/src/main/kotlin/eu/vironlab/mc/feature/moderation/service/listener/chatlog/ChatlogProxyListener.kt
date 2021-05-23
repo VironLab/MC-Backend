@@ -35,40 +35,44 @@
  *<p>
  */
 
-package eu.vironlab.mc.util
+package eu.vironlab.mc.feature.moderation.service.listener.chatlog
 
-import eu.thesimplecloud.api.service.version.ServiceVersion
-import eu.thesimplecloud.api.service.version.type.ServiceAPIType
-import eu.vironlab.mc.feature.FeatureRegistry
-import eu.vironlab.vextension.database.DatabaseClient
-import java.nio.file.Path
+import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.connection.DisconnectEvent
+import com.velocitypowered.api.event.connection.LoginEvent
+import com.velocitypowered.api.event.player.PlayerChatEvent
+import eu.thesimplecloud.plugin.startup.CloudPlugin
+import eu.vironlab.mc.feature.moderation.ModerationConfiguration
+import eu.vironlab.mc.feature.moderation.PlayerChatHistory
+import eu.vironlab.mc.feature.moderation.packet.chatlog.PacketCacheDisconnectedPlayerMessages
+import eu.vironlab.mc.feature.moderation.packet.chatlog.PacketGetDisconnectedPlayerCache
 
-object CloudUtil {
-    fun init(
-        db: DatabaseClient,
-        prefix: String,
-        dataFolder: Path,
-        registry: FeatureRegistry,
-    ) {
-        this.dbClient = db
-        this.prefix = prefix
-        this.dataFolder = dataFolder
-        this.featureRegistry = registry
+
+class ChatlogProxyListener(config: ModerationConfiguration.ChatlogConfiguration) : AbstractChatlogProxyListener(config) {
+
+    @Subscribe
+    fun handleChat(e: PlayerChatEvent) {
+        handle(e.message, e.player.uniqueId)
     }
 
-    @JvmStatic
-    lateinit var dbClient: DatabaseClient
+    @Subscribe
+    fun handleJoin(e: LoginEvent) {
+        this.messageCache[e.player.uniqueId] = CloudPlugin.instance.connectionToManager.sendQuery(
+            PacketGetDisconnectedPlayerCache(e.player.uniqueId),
+            PlayerChatHistory::class.java
+        ).getBlocking().messages
+    }
 
-    @JvmStatic
-    lateinit var prefix: String
-
-    @JvmStatic
-    lateinit var dataFolder: Path
-
-    @JvmStatic
-    lateinit var featureRegistry: FeatureRegistry
-
-    @JvmStatic
-    val TUINITY_SERVICE_VERSION = ServiceVersion("tuinity", ServiceAPIType.SPIGOT, "https://ci.vironlab.eu/job/Tunity/lastSuccessfulBuild/artifact/Tuinity-Server/target/tuinity-1.16.5.jar")
+    @Subscribe
+    fun handleQuit(e: DisconnectEvent) {
+        CloudPlugin.instance.connectionToManager.sendUnitQuery(
+            PacketCacheDisconnectedPlayerMessages(
+                PlayerChatHistory(
+                    e.player.uniqueId,
+                    this.messageCache.remove(e.player.uniqueId)!!
+                )
+            )
+        )
+    }
 
 }

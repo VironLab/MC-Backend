@@ -46,12 +46,12 @@ import eu.thesimplecloud.plugin.startup.CloudPlugin
 import eu.vironlab.mc.VextensionDownloader
 import eu.vironlab.mc.extension.initOnService
 import eu.vironlab.mc.feature.BackendFeatureConfiguration
-import eu.vironlab.mc.feature.chatlog.ChatlogConfiguration
-import eu.vironlab.mc.feature.chatlog.packet.PacketGetChatlogConfiguration
-import eu.vironlab.mc.feature.chatlog.service.listener.ChatlogProxyListener
-import eu.vironlab.mc.feature.chatlog.service.listener.CommandIncludedChatlogProxyListener
-import eu.vironlab.mc.feature.punishment.ServicePunishmentFeature
-import eu.vironlab.mc.feature.punishment.service.listener.PunishmentListener
+import eu.vironlab.mc.feature.moderation.ModerationConfiguration
+import eu.vironlab.mc.feature.moderation.packet.chatlog.PacketGetChatlogConfiguration
+import eu.vironlab.mc.feature.moderation.service.listener.chatlog.ChatlogProxyListener
+import eu.vironlab.mc.feature.moderation.service.listener.chatlog.CommandIncludedChatlogProxyListener
+import eu.vironlab.mc.feature.moderation.ServiceModerationFeature
+import eu.vironlab.mc.feature.moderation.service.listener.punishment.PunishmentListener
 import eu.vironlab.mc.util.CloudUtil
 import java.io.File
 import java.net.URI
@@ -78,18 +78,16 @@ class VelocityLoader @Inject constructor(val server: ProxyServer, val logger: Lo
             CloudAPI.instance.getGlobalPropertyHolder().requestProperty<BackendFeatureConfiguration>("features")
                 .getBlocking().getValue()
         CloudUtil.initOnService(featureConfig)
-        if (featureConfig.punishment) {
-            CloudUtil.featureRegistry.getFeature(ServicePunishmentFeature::class.java)?.let {
+        if (featureConfig.moderation) {
+            CloudUtil.featureRegistry.getFeature(ServiceModerationFeature::class.java)?.let {
                 val punishListener = PunishmentListener(it)
                 server.eventManager.register(this, punishListener)
                 CloudAPI.instance.getEventManager()
                     .registerListener(CloudAPI.instance.getThisSidesCloudModule(), punishListener)
             }
-        }
-        if (featureConfig.chatlog) {
             CloudPlugin.instance.connectionToManager.sendQuery(
                 PacketGetChatlogConfiguration(),
-                ChatlogConfiguration::class.java
+                ModerationConfiguration.ChatlogConfiguration::class.java
             ).then {
                 if (it.includeCommands) {
                     server.eventManager.register(this, CommandIncludedChatlogProxyListener(it))

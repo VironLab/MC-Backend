@@ -2,14 +2,14 @@
  *   Copyright © 2020 | vironlab.eu | All Rights Reserved.<p>
  * <p>
  *      ___    _______                        ______         ______  <p>
- *      __ |  / /___(_______________ _______ ___  / ______ ____  /_ <p>
+ *      __ |  / /___(_)______________ _______ ___  / ______ ____  /_ <p>
  *      __ | / / __  / __  ___/_  __ \__  __ \__  /  _  __ `/__  __ \<p>
  *      __ |/ /  _  /  _  /    / /_/ /_  / / /_  /___/ /_/ / _  /_/ /<p>
  *      _____/   /_/   /_/     \____/ /_/ /_/ /_____/\__,_/  /_.___/ <p>
  *<p>
  *    ____  _______     _______ _     ___  ____  __  __ _____ _   _ _____ <p>
  *   |  _ \| ____\ \   / / ____| |   / _ \|  _ \|  \/  | ____| \ | |_   _|<p>
- *   | | | |  _|  \ \ / /|  _| | |  | | | | |_ | |\/| |  _| |  \| | | |  <p>
+ *   | | | |  _|  \ \ / /|  _| | |  | | | | |_) | |\/| |  _| |  \| | | |  <p>
  *   | |_| | |___  \ V / | |___| |__| |_| |  __/| |  | | |___| |\  | | |  <p>
  *   |____/|_____|  \_/  |_____|_____\___/|_|   |_|  |_|_____|_| \_| |_|  <p>
  *<p>
@@ -17,7 +17,7 @@
  *   This program is free software: you can redistribute it and/or modify<p>
  *   it under the terms of the GNU General Public License as published by<p>
  *   the Free Software Foundation, either version 3 of the License, or<p>
- *   (at your option any later version.<p>
+ *   (at your option) any later version.<p>
  *<p>
  *   This program is distributed in the hope that it will be useful,<p>
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of<p>
@@ -35,14 +35,26 @@
  *<p>
  */
 
-package eu.vironlab.mc.feature
+package eu.vironlab.mc.feature.moderation.packet.punishment
+
+import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
+import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
+import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.vironlab.mc.feature.moderation.PlayerPunishmentData
+import eu.vironlab.mc.feature.moderation.manager.ManagerPacketModerationConstant
+import java.util.*
 
 
-class BackendFeatureConfiguration {
-    val playermenu: Boolean = true
-    val gamemode: Boolean = true
-    val broadcast = true
-    val moderation = true
-    val economy = true
-    val help = true
+class PacketUpdatePunishment() : JsonPacket() {
+
+    constructor(player: UUID, data: PlayerPunishmentData) : this() {
+        this.jsonLib.append("player", player).append("data", data)
+    }
+
+    override suspend fun handle(connection: IConnection): ICommunicationPromise<Unit> {
+        val data = jsonLib.getObject("data", PlayerPunishmentData::class.java) ?: return contentException("data")
+        val player = jsonLib.getObject("player", UUID::class.java) ?: return contentException("player")
+        ManagerPacketModerationConstant.moderationFeature.updatePunishments(player, data)
+        return unit()
+    }
 }
