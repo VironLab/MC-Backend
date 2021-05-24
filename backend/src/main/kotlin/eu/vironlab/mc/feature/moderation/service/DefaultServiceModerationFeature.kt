@@ -47,7 +47,6 @@ import eu.vironlab.mc.extension.replace
 import eu.vironlab.mc.feature.moderation.*
 import eu.vironlab.mc.feature.moderation.chatlog.Chatlog
 import eu.vironlab.mc.feature.moderation.packet.punishment.*
-import eu.vironlab.mc.feature.moderation.packet.replay.PacketSaveReplay
 import eu.vironlab.mc.feature.moderation.packet.replay.PacketStartReplay
 import eu.vironlab.mc.feature.moderation.replay.PlayingReplay
 import eu.vironlab.vextension.document.document
@@ -169,7 +168,8 @@ class DefaultServiceModerationFeature : ServiceModerationFeature {
                 it.players,
                 CloudAPI.instance.getCloudServiceManager().getCloudServiceByName(it.serviceName)
                     ?: throw IllegalStateException("There is no Service for the received Replay Information"),
-                it.serviceName
+                it.serviceName, it.duration,
+                it.saved
             )
         }
     }

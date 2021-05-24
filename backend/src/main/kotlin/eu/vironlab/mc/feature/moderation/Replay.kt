@@ -45,30 +45,41 @@ import java.lang.reflect.Type
 import java.util.*
 
 
-data class SerializedReplay(override val id: UUID, override val players: MutableList<UUID>,
-                            override val serviceGroup: String
+data class SerializedReplay(
+    override val id: UUID, override val players: MutableList<UUID>,
+    override val serviceGroup: String, override val duration: Long, override val saved: Long
 ) : Replay {
     companion object {
         @JvmStatic
-        val TYPE: Type = object : TypeToken<SerializedReplay>(){}.type
+        val TYPE: Type = object : TypeToken<SerializedReplay>() {}.type
     }
 }
 
 data class PlayingReplayImpl(
     override val id: UUID,
-    override val players: MutableList<UUID>, override val service: ICloudService, override val serviceGroup: String
+    override val players: MutableList<UUID>, override val service: ICloudService, override val serviceGroup: String,
+    override val duration: Long,
+    override val saved: Long
 ) : PlayingReplay {
 
 }
 
-data class SerializedPlayingReplay(val id: UUID, val players: MutableList<UUID>, val serviceName: String) {
+data class SerializedPlayingReplay(
+    val id: UUID,
+    val players: MutableList<UUID>,
+    val serviceName: String,
+    val duration: Long,
+    val saved: Long
+) {
     companion object {
         @JvmStatic
         fun fromInterface(replay: PlayingReplay): SerializedPlayingReplay {
             return SerializedPlayingReplay(
                 replay.id,
                 replay.players,
-                replay.service.getName()
+                replay.service.getName(),
+                replay.duration,
+                replay.saved
             )
         }
     }

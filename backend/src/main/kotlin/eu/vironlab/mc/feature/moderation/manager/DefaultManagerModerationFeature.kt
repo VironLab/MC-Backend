@@ -198,7 +198,7 @@ class DefaultManagerModerationFeature(val cloudUtil: CloudUtil, configDir: File)
         val replay = replayDatabase.get(id.toString()).complete()?.toInstance<SerializedReplay>(SerializedReplay.TYPE)
             ?: throw IllegalStateException("There is no Replay with id: $id")
         return this.replayServerGroup.createStartConfiguration().startService().then { service ->
-            val playingReplay = PlayingReplayImpl(replay.id, replay.players, service, service.getGroupName())
+            val playingReplay = PlayingReplayImpl(replay.id, replay.players, service, service.getGroupName(), replay.duration, replay.saved)
             this.replayServices[service.getUniqueId()] = playingReplay
             return@then playingReplay
         }

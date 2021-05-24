@@ -40,11 +40,14 @@ package eu.vironlab.mc.feature.moderation.packet.replay
 import eu.thesimplecloud.clientserverapi.lib.connection.IConnection
 import eu.thesimplecloud.clientserverapi.lib.packet.packettype.JsonPacket
 import eu.thesimplecloud.clientserverapi.lib.promise.ICommunicationPromise
+import eu.vironlab.mc.bukkit.BukkitLoader
+import eu.vironlab.mc.bukkit.replay.ReplaySaver
 
 
 class PacketSaveReplay() : JsonPacket() {
 
     override suspend fun handle(connection: IConnection): ICommunicationPromise<Unit> {
+        ReplaySaver.saveReplay = true
         return unit()
     }
 

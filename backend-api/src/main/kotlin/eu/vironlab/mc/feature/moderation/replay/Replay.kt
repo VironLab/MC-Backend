@@ -46,4 +46,8 @@ interface Replay : Proof {
 
     val serviceGroup: String
 
+    val duration: Long
+
+    val saved: Long
+
 }

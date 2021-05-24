@@ -33,6 +33,12 @@ This Project is the Backend/ProxySystem of our Open Source Minecraft Network
 
 ---
 
+### Copyright
+
+- Some parts of the Replay System are inspired by AdvancedReplay (https://github.com/Jumper251/AdvancedReplay) and some methods are ported to kotlin from https://github.com/dmulloy2/PacketWrapper
+
+---
+
 ### Discord
 
 <div align="center">
