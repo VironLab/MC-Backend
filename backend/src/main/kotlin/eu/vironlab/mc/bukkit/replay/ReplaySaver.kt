@@ -6,6 +6,7 @@ import eu.vironlab.mc.bukkit.replay.data.Action
 import eu.vironlab.mc.bukkit.replay.data.ActionType
 import eu.vironlab.mc.bukkit.replay.data.RecordedReplay
 import eu.vironlab.mc.bukkit.replay.record.PacketRecorder
+import eu.vironlab.mc.bukkit.replay.world.WorldChecker
 import eu.vironlab.mc.feature.moderation.SerializedReplay
 import eu.vironlab.mc.feature.moderation.packet.replay.PacketSaveReplay
 import eu.vironlab.vextension.document.document
@@ -29,9 +30,19 @@ class ReplaySaver(val bukkitLoader: BukkitLoader) : Listener {
     val serviceId = CloudPlugin.instance.thisService().getUniqueId()
     val players: MutableList<UUID> = mutableListOf()
     val recorder: PacketRecorder = PacketRecorder(this)
+    val worldChecker: WorldChecker
 
     init {
         CloudPlugin.instance.communicationClient.getPacketManager().registerPacket(PacketSaveReplay::class.java)
+        this.worldChecker = WorldChecker(
+            File(
+                bukkitLoader.backendDataFolder,
+                "/replay/worlds/${CloudPlugin.instance.thisService().getGroupName()}/"
+            ).also {
+                if (!it.exists()) {
+                    Files.createDirectories(it.toPath())
+                }
+            })
         this.runnable = object : BukkitRunnable() {
             override fun run() {
                 val tmp = recorder.recorded
@@ -87,7 +98,7 @@ class ReplaySaver(val bukkitLoader: BukkitLoader) : Listener {
                         players,
                         CloudPlugin.instance.thisService().getGroupName(),
                         currentTick,
-                        System.currentTimeMillis()
+                        System.currentTimeMillis(), mutableListOf()
                     )
                 )
             ).also { it.saveConfig() }

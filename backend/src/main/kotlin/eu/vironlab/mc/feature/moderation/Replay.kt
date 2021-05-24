@@ -47,7 +47,8 @@ import java.util.*
 
 data class SerializedReplay(
     override val id: UUID, override val players: MutableList<UUID>,
-    override val serviceGroup: String, override val duration: Long, override val saved: Long
+    override val serviceGroup: String, override val duration: Long, override val saved: Long,
+    override val worlds: MutableList<UUID>
 ) : Replay {
     companion object {
         @JvmStatic
@@ -59,7 +60,7 @@ data class PlayingReplayImpl(
     override val id: UUID,
     override val players: MutableList<UUID>, override val service: ICloudService, override val serviceGroup: String,
     override val duration: Long,
-    override val saved: Long
+    override val saved: Long, override val worlds: MutableList<UUID>
 ) : PlayingReplay {
 
 }
@@ -69,7 +70,8 @@ data class SerializedPlayingReplay(
     val players: MutableList<UUID>,
     val serviceName: String,
     val duration: Long,
-    val saved: Long
+    val saved: Long,
+    val worlds: MutableList<UUID>
 ) {
     companion object {
         @JvmStatic
@@ -79,7 +81,8 @@ data class SerializedPlayingReplay(
                 replay.players,
                 replay.service.getName(),
                 replay.duration,
-                replay.saved
+                replay.saved,
+                replay.worlds
             )
         }
     }

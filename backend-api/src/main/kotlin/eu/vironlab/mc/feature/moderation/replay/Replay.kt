@@ -50,4 +50,6 @@ interface Replay : Proof {
 
     val saved: Long
 
+    val worlds: MutableList<UUID>
+
 }

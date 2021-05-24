@@ -169,7 +169,8 @@ class DefaultServiceModerationFeature : ServiceModerationFeature {
                 CloudAPI.instance.getCloudServiceManager().getCloudServiceByName(it.serviceName)
                     ?: throw IllegalStateException("There is no Service for the received Replay Information"),
                 it.serviceName, it.duration,
-                it.saved
+                it.saved,
+                it.worlds
             )
         }
     }
